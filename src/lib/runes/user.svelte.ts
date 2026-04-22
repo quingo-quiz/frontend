@@ -20,6 +20,7 @@ class UserContext {
 
     logout() {
         this.#user = null;
+         this.#isLoading = false;
     }
 }
 

@@ -8,13 +8,13 @@
   let { children } = $props();
 
   onMount(async () => {
-    const user = await authService.fetchUserInfo();
-    if (user) {
+    try {
+        const user = await authService.fetchUserInfo();
         userContext.set(user);
-    } else {
+    } catch (e) {
         userContext.set(null);
     }
-  });
+});
 </script>
 
 <ToastContainer />
