@@ -1,13 +1,47 @@
-// src/lib/api/auth.ts
 import { PUBLIC_API_URL } from '$env/static/public';
 import { userContext } from '$lib/runes/user.svelte';
 import type { AuthResponse, User } from '$lib/types/auth';
+import { goto } from '$app/navigation';
+
+const SERVICE_URL = `${PUBLIC_API_URL}/auth`;
 
 /**
- * SERVICE_URL будет равен https://quingo.arhr.tech/api/auth
- * Все запросы этого сервиса идут через этот префикс
+ * Вспомогательная функция для запросов с обработкой 401 (Refresh Token)
  */
-const SERVICE_URL = `${PUBLIC_API_URL}/auth`;
+async function authorizedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+    const defaultHeaders = {
+        'Content-Type': 'application/json',
+        'Auth-Strategy': 'cookie'
+    };
+
+    let response = await fetch(url, {
+        ...options,
+        headers: { ...defaultHeaders, ...options.headers }
+    });
+
+    // Если получили 401, пробуем обновиться один раз
+    if (response.status === 401) {
+        const refreshRes = await fetch(`${SERVICE_URL}/refresh`, {
+            method: 'POST',
+            headers: defaultHeaders
+            // Тело пустое, так как используем куки (как обсуждали ранее)
+        });
+
+        if (refreshRes.ok) {
+            // Если рефреш успешен, повторяем исходный запрос
+            response = await fetch(url, {
+                ...options,
+                headers: { ...defaultHeaders, ...options.headers }
+            });
+        } else {
+            // Если и рефреш не помог — разлогиниваем и на выход
+            userContext.logout();
+            if (typeof window !== 'undefined') goto('/auth');
+        }
+    }
+
+    return response;
+}
 
 export const authService = {
     async login(email: string, password: string) {
@@ -18,10 +52,10 @@ export const authService = {
         });
         const result = await res.json();
 
-       if (res.status === 403 && result.data?.mfaRequired) {
-        sessionStorage.setItem('mfa_temp_token', result.data.mfaTempToken);
-        sessionStorage.setItem('mfa_token_timestamp', Date.now().toString()); // Сохраняем время
-        return { mfaRequired: true };
+        if (res.status === 403 && result.data?.mfaRequired) {
+            sessionStorage.setItem('mfa_temp_token', result.data.mfaTempToken);
+            sessionStorage.setItem('mfa_token_timestamp', Date.now().toString());
+            return { mfaRequired: true };
         }
         if (!res.ok) throw result;
         return { mfaRequired: false };
@@ -33,56 +67,30 @@ export const authService = {
             headers: { 'Content-Type': 'application/json', 'Auth-Strategy': 'cookie' },
             body: JSON.stringify(data)
         });
-        
-        if (!res.ok) {
-            const result = await res.json();
-            throw result;
-        }
-        // Мы не читаем result.data здесь, так как токены в куках
+        if (!res.ok) throw await res.json();
         return true; 
     },
 
-    // 2. Верификация MFA OTP
-    // Конечный путь: https://quingo.arhr.tech/api/auth/mfa/otp/verify
     async verifyOtp(code: string, mfaTempToken: string) {
         const res = await fetch(`${SERVICE_URL}/mfa/otp/verify`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Auth-Strategy': 'cookie' 
-            },
+            headers: { 'Content-Type': 'application/json', 'Auth-Strategy': 'cookie' },
             body: JSON.stringify({ code, mfaTempToken })
         });
-
         const result = await res.json();
-
-        if (!res.ok) {
-            throw new Error(result.message || 'Неверный код');
-        }
-
+        if (!res.ok) throw new Error(result.message || 'Invalid code');
         return result.data;
     },
 
-    // 3. Получение данных профиля (UserInfo)
-    // Конечный путь: https://quingo.arhr.tech/api/auth/user/info
     async fetchUserInfo(): Promise<User | null> {
         try {
-            const res = await fetch(`${SERVICE_URL}/user/info`, {
-                headers: { 'Auth-Strategy': 'cookie' }
-            });
-            
+            const res = await authorizedFetch(`${SERVICE_URL}/user/info`);
             if (!res.ok) return null;
-            
             const result = await res.json();
             return result.data;
-        } catch (error) {
-            console.error('Fetch user info error:', error);
-            return null;
-        }
+        } catch { return null; }
     },
 
-    // 4. Выход
-    // Конечный путь: https://quingo.arhr.tech/api/auth/logout
     async logout() {
         try {
             await fetch(`${SERVICE_URL}/logout`, {
@@ -90,38 +98,36 @@ export const authService = {
                 headers: { 'Auth-Strategy': 'cookie' }
             });
         } finally {
-            // В любом случае очищаем состояние на фронте
             userContext.logout();
         }
     },
+
+    // НОВЫЙ МЕТОД: Отзыв всех сессий
+    async logoutAll() {
+        const res = await authorizedFetch(`${SERVICE_URL}/logout/all`, {
+            method: 'POST'
+        });
+        if (!res.ok) throw await res.json();
+        return true;
+    },
+
     async getSessions() {
-        const res = await fetch(`${SERVICE_URL}/tokens`, {
-            headers: { 'Auth-Strategy': 'cookie' }
-        });
+        const res = await authorizedFetch(`${SERVICE_URL}/tokens`);
         const result = await res.json();
         if (!res.ok) throw result;
-        return result.data; // Массив TokenModel
+        return result.data; 
     },
 
-    // 2. Инициализация подключения OTP
     async initMfaConnect() {
-        const res = await fetch(`${SERVICE_URL}/mfa/otp/connect`, {
-            method: 'POST',
-            headers: { 'Auth-Strategy': 'cookie' }
-        });
+        const res = await authorizedFetch(`${SERVICE_URL}/mfa/otp/connect`, { method: 'POST' });
         const result = await res.json();
         if (!res.ok) throw result;
-        return result.data; // { secretUri: string }
+        return result.data;
     },
 
-    // 3. Подтверждение подключения OTP
     async confirmMfaConnect(code: string) {
-        const res = await fetch(`${SERVICE_URL}/mfa/otp/connect/confirm`, {
+        const res = await authorizedFetch(`${SERVICE_URL}/mfa/otp/connect/confirm`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Auth-Strategy': 'cookie' 
-            },
             body: JSON.stringify({ code })
         });
         const result = await res.json();
