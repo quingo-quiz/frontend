@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* Подключаем плагины, если они тебе нужны */
+@plugin "@tailwindcss/forms";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  /* Цвета фона и поверхностей */
+  --color-background: hsl(222 47% 11%); /* Slate 950 */
+  --color-surface: hsl(222 47% 15%);    /* Slate 900 */
+  --color-border: hsl(217 33% 17%);     /* Slate 800 */
+
+  /* Цвета текста */
+  --color-foreground: hsl(0 0% 100%);
+  --color-foreground-muted: hsl(215 20% 65%);
+
+  /* Основной акцентный цвет (Quingo Orange) */
+  --color-primary: hsl(24 95% 53%);
+  --color-primary-hover: hsl(24 94% 45%);
+  
+  /* Статусы */
+  --color-error: hsl(0 84% 60%);
+  --color-success: hsl(142 70% 45%);
+
+  /* Тень для свечения кнопок */
+  --shadow-primary-glow: 0 0 20px hsla(24, 95%, 53%, 0.4);
+}
+
+/* Базовые стили для тегов */
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
