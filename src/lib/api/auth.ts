@@ -10,26 +10,36 @@ import type { AuthResponse, User } from '$lib/types/auth';
 const SERVICE_URL = `${PUBLIC_API_URL}/auth`;
 
 export const authService = {
-    // 1. Вход (Email/Pass)
-    // Конечный путь: https://quingo.arhr.tech/api/auth/auth
-    async login(email: string, password: string): Promise<AuthResponse['data']> {
+    async login(email: string, password: string) {
         const res = await fetch(`${SERVICE_URL}/auth`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Auth-Strategy': 'cookie' 
-            },
+            headers: { 'Content-Type': 'application/json', 'Auth-Strategy': 'cookie' },
             body: JSON.stringify({ email, password })
         });
+        const result = await res.json();
 
-        const result: AuthResponse = await res.json();
-
-        // Обработка 403 (MFA Required) или 200 (Success)
-        if (res.status === 403 || res.ok) {
-            return result.data;
+       if (res.status === 403 && result.data?.mfaRequired) {
+        sessionStorage.setItem('mfa_temp_token', result.data.mfaTempToken);
+        sessionStorage.setItem('mfa_token_timestamp', Date.now().toString()); // Сохраняем время
+        return { mfaRequired: true };
         }
+        if (!res.ok) throw result;
+        return { mfaRequired: false };
+    },
 
-        throw new Error(result.message || 'Ошибка входа');
+    async register(data: any) {
+        const res = await fetch(`${SERVICE_URL}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Auth-Strategy': 'cookie' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!res.ok) {
+            const result = await res.json();
+            throw result;
+        }
+        // Мы не читаем result.data здесь, так как токены в куках
+        return true; 
     },
 
     // 2. Верификация MFA OTP

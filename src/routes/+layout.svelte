@@ -3,6 +3,7 @@
   import { onMount } from 'svelte';
   import { authService } from '$lib/api/auth';
   import { userContext } from '$lib/runes/user.svelte';
+  import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
 
   let { children } = $props();
 
@@ -16,6 +17,7 @@
   });
 </script>
 
+<ToastContainer />
 {#if userContext.isLoading}
   <div class="flex h-screen items-center justify-center bg-background text-primary">
     <span class="animate-pulse text-xl font-bold">Loading...</span>

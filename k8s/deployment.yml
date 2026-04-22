@@ -18,3 +18,10 @@ spec:
         image: artem5252/quingo-frontend:latest
         ports:
         - containerPort: 3000
+        
+        env:
+          - name: PUBLIC_API_URL
+            valueFrom:
+              secretKeyRef:
+                name: frontend-secret
+                key: PUBLIC_API_URL
