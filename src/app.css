@@ -33,4 +33,8 @@
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
+
+  .sveltekit-body {
+    display: contents;
+  }
 }

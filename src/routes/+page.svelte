@@ -25,22 +25,30 @@
 	<div class="w-full max-w-[440px] rounded-[2rem] border border-white/5 bg-surface p-6 sm:p-10 shadow-2xl">
 		
 		<!-- Tabs -->
-		<div class="flex p-1.5 bg-background rounded-xl mb-8">
-			<button 
-				onclick={() => activeTab = 'signin'}
-				class={cn("flex-1 py-2 text-sm font-semibold rounded-lg transition-all", 
-				activeTab === 'signin' ? "bg-primary text-white shadow-md" : "text-slate-500 hover:text-slate-300")}
-			>
-				Sign In
-			</button>
-			<button 
-				onclick={() => activeTab = 'create'}
-				class={cn("flex-1 py-2 text-sm font-semibold rounded-lg transition-all", 
-				activeTab === 'create' ? "bg-primary text-white shadow-md" : "text-slate-500 hover:text-slate-300")}
-			>
-				Create Account
-			</button>
-		</div>
+		<div class="flex p-1 bg-slate-950/80 rounded-xl mb-8 border border-white/5">
+    <button 
+        onclick={() => activeTab = 'signin'}
+        class={cn(
+            "flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200", 
+            activeTab === 'signin' 
+                ? "bg-primary text-white shadow-sm shadow-primary/20" 
+                : "text-slate-500 hover:text-slate-400"
+        )}
+    >
+        Sign In
+    </button>
+    <button 
+        onclick={() => activeTab = 'create'}
+        class={cn(
+            "flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200", 
+            activeTab === 'create' 
+                ? "bg-primary text-white shadow-sm shadow-primary/20" 
+                : "text-slate-500 hover:text-slate-400"
+        )}
+    >
+        Create Account
+    </button>
+</div>
 
 		<form class="space-y-5" onsubmit={(e) => { e.preventDefault(); handleLogin(); }}>
 			<Input 
