@@ -1,32 +1,31 @@
 @import "tailwindcss";
 
-/* Подключаем плагины, если они тебе нужны */
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
 
 @theme {
-  /* Цвета фона и поверхностей */
-  --color-background: hsl(222 47% 11%); /* Slate 950 */
-  --color-surface: hsl(222 47% 15%);    /* Slate 900 */
-  --color-border: hsl(217 33% 17%);     /* Slate 800 */
-
-  /* Цвета текста */
-  --color-foreground: hsl(0 0% 100%);
-  --color-foreground-muted: hsl(215 20% 65%);
-
-  /* Основной акцентный цвет (Quingo Orange) */
-  --color-primary: hsl(24 95% 53%);
-  --color-primary-hover: hsl(24 94% 45%);
+  /* Цвета фона */
+  --color-background: #0f172a; /* Slate 950 - основной фон */
+  --color-surface: #1e293b;    /* Slate 900 - фон карточки */
+  --color-input-bg: #0f172a;   /* Глубокий темный для инпутов (эффект впадины) */
   
-  /* Статусы */
-  --color-error: hsl(0 84% 60%);
-  --color-success: hsl(142 70% 45%);
+  --color-border: #334155;     /* Slate 700 - границы */
+  --color-border-muted: #1e293b; 
 
-  /* Тень для свечения кнопок */
-  --shadow-primary-glow: 0 0 20px hsla(24, 95%, 53%, 0.4);
+  /* Текст */
+  --color-foreground: #ffffff;
+  --color-foreground-muted: #94a3b8; /* Slate 400 */
+
+  /* Акцент */
+  --color-primary: #f97316;    /* Orange 500 */
+  --color-primary-hover: #ea580c; /* Orange 600 */
+  
+  /* Тени и эффекты */
+  --shadow-primary-glow: 0 4px 20px -5px rgba(249, 115, 22, 0.5);
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
 }
 
-/* Базовые стили для тегов */
 @layer base {
   body {
     background-color: var(--color-background);
