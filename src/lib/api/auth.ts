@@ -93,5 +93,39 @@ export const authService = {
             // В любом случае очищаем состояние на фронте
             userContext.logout();
         }
+    },
+    async getSessions() {
+        const res = await fetch(`${SERVICE_URL}/tokens`, {
+            headers: { 'Auth-Strategy': 'cookie' }
+        });
+        const result = await res.json();
+        if (!res.ok) throw result;
+        return result.data; // Массив TokenModel
+    },
+
+    // 2. Инициализация подключения OTP
+    async initMfaConnect() {
+        const res = await fetch(`${SERVICE_URL}/mfa/otp/connect`, {
+            method: 'POST',
+            headers: { 'Auth-Strategy': 'cookie' }
+        });
+        const result = await res.json();
+        if (!res.ok) throw result;
+        return result.data; // { secretUri: string }
+    },
+
+    // 3. Подтверждение подключения OTP
+    async confirmMfaConnect(code: string) {
+        const res = await fetch(`${SERVICE_URL}/mfa/otp/connect/confirm`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Auth-Strategy': 'cookie' 
+            },
+            body: JSON.stringify({ code })
+        });
+        const result = await res.json();
+        if (!res.ok) throw result;
+        return result;
     }
 };
