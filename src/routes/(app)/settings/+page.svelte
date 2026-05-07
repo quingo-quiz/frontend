@@ -4,16 +4,42 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { toasts } from '$lib/runes/toast.svelte';
 	import { Camera } from 'lucide-svelte';
+	import { authService } from '$lib/api/auth';
+	import type { UpdateUserRequest } from '$lib/types/auth';
 
 	let loading = $state(false);
-	let username = $state(userContext.user?.username || '');
-	let bio = $state("");
+	
+	// Локальное состояние полей, инициализируется из userContext
+	let currentUsername = $state(userContext.user?.username || '');
+	let currentBio = $state(userContext.user?.bio || ''); // Используем поле bio из User модели
+
+	let initialUsername = userContext.user?.username || '';
+	let initialBio = userContext.user?.bio || '';
+
+	// Определяем, были ли изменения
+	let hasChanges = $derived(
+		currentUsername !== initialUsername || currentBio !== initialBio
+	);
 
 	async function saveChanges() {
+		if (!hasChanges) return;
+
 		loading = true;
 		try {
-			await new Promise(r => setTimeout(r, 1000));
-			toasts.show('Profile updated successfully', 'success');
+			const updateData: UpdateUserRequest = {};
+			if (currentUsername !== initialUsername) updateData.username = currentUsername;
+			if (currentBio !== initialBio) updateData.bio = currentBio;
+
+			const updatedUser = await authService.updateUserProfile(updateData);
+			userContext.set(updatedUser); // Обновляем глобальный контекст пользователя
+			
+			// Обновляем начальные значения, чтобы hasChanges стал false
+			initialUsername = updatedUser.username;
+			initialBio = updatedUser.bio || '';
+
+			toasts.show('Profile updated successfully!', 'success');
+		} catch (e: any) {
+			toasts.show(e.message || 'Failed to update profile', 'error');
 		} finally {
 			loading = false;
 		}
@@ -22,7 +48,7 @@
 
 <div class="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500">
 	<div class="relative overflow-hidden rounded-4xl border border-white/5 bg-surface p-6 shadow-2xl sm:p-10">
-		<h3 class="mb-8 text-xl font-bold">Profile Information</h3>
+		<h3 class="mb-8 text-xl font-bold text-white">Profile Information</h3>
 
 		<div class="mb-10 flex items-center gap-8">
 			<!-- Аватар с наведением -->
@@ -44,11 +70,11 @@
 		</div>
 
 		<form class="grid grid-cols-1 gap-6 md:grid-cols-2" onsubmit={(e) => { e.preventDefault(); saveChanges(); }}>
-			<Input label="Username" bind:value={username} placeholder="Username" />
+			<Input label="Username" bind:value={currentUsername} placeholder="Username" />
 			
 			<div class="flex flex-col gap-1.5">
 				<label class="px-1 text-[11px] font-medium uppercase tracking-wider text-slate-500" for="email">Email Address</label>
-				<div class="rounded-lg border border-white/5 bg-slate-950/50 p-3 text-sm italic text-slate-400">
+				<div id="email" class="rounded-lg border border-white/5 bg-slate-950/50 p-3 text-sm italic text-slate-400">
 					{userContext.user?.email}
 				</div>
 			</div>
@@ -57,14 +83,14 @@
 				<label class="px-1 text-[11px] font-medium uppercase tracking-wider text-slate-500" for="bio">Bio</label>
 				<textarea 
 					id="bio"
-					bind:value={bio}
+					bind:value={currentBio}
 					placeholder="Tell us about yourself..."
 					class="min-h-25 w-full resize-none rounded-lg border border-white/10 bg-slate-950/50 p-3 text-sm text-white transition-all focus:border-primary/50 focus:outline-none"
 				></textarea>
 			</div>
 
 			<div class="pt-4 md:col-span-2">
-				<Button type="submit" isLoading={loading} class="w-full px-10 sm:w-auto">
+				<Button type="submit" isLoading={loading} disabled={!hasChanges} class="w-full px-10 sm:w-auto">
 					Save Changes
 				</Button>
 			</div>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto } from '$app/navigation'; // Только goto
 	import { ArrowLeft, Copy, Check, QrCode } from 'lucide-svelte';
 	import QRCode from 'qrcode';
 	import { cn } from '$lib/utils/ui';
@@ -76,9 +76,8 @@
 
 		loading = true;
 		try {
-			await authService.confirmMfaConnect(code);
+			await authService.confirmMfaConnect({ code }); // Передаем объект
 			
-			// КРИТИЧЕСКИ ВАЖНО: Получаем свежие данные и обновляем стейт
 			const freshUser = await authService.fetchUserInfo();
 			userContext.set(freshUser);
 			
@@ -96,7 +95,7 @@
 </script>
 
 <div class="max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
-	<div class="bg-surface border border-white/5 rounded-[2.5rem] p-8 shadow-2xl">
+	<div class="bg-surface border border-white/5 rounded-4xl p-8 shadow-2xl"> <!-- rounded-4xl -->
 		
 		<div class="flex items-center justify-between mb-8">
 			<button onclick={() => goto('/settings/security')} class="p-2 -ml-2 text-slate-500 hover:text-white transition-colors">
@@ -109,7 +108,8 @@
 		{#if initializing}
 			<div class="py-20 flex flex-col items-center gap-4 text-slate-500">
 				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-				<span class="text-xs uppercase font-bold tracking-widest">Encrypting...</span>
+				<span class="text-lg font-bold">Encrypting...</span>
+				<p class="text-sm">Generating secure keys for your account.</p>
 			</div>
 		{:else}
 			<div class="space-y-8">
@@ -120,11 +120,11 @@
 					</div>
 					<h3 class="text-white font-bold text-lg mb-2">Scan with App</h3>
 					<p class="text-slate-500 text-xs px-4">
-						Scan this code in Google Authenticator or Authy to link your device.
+						Open your authenticator app (Google Authenticator, Authy) and scan this code to link your account.
 					</p>
 				</div>
 
-				<!-- Step 2: Key Display -->
+				<!-- Step 2: Manual Key (Fallback) -->
 				<div class="bg-slate-950/50 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
 					<div class="text-left overflow-hidden mr-4">
 						<p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Manual Key</p>
@@ -140,7 +140,6 @@
 					<p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Confirm Activation</p>
 					
 					<form onsubmit={(e) => { e.preventDefault(); handleConfirm(); }} class="space-y-8">
-						<!-- OTP Grid: Центрирование и фикс геометрии -->
 						<div class="flex justify-center">
 							<div class="grid grid-cols-6 gap-2 sm:gap-3 max-w-[320px]">
 								{#each digits as digit, i}
@@ -162,12 +161,7 @@
 							</div>
 						</div>
 
-						<Button 
-							type="submit" 
-							class="w-full py-4 text-sm uppercase tracking-widest shadow-lg shadow-primary/10" 
-							isLoading={loading} 
-							disabled={digits.join('').length < 6}
-						>
+						<Button type="submit" class="w-full py-4 text-sm uppercase tracking-widest shadow-lg shadow-primary/10" isLoading={loading} disabled={digits.join('').length < 6}>
 							Confirm & Activate
 						</Button>
 					</form>

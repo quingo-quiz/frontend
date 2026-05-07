@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto } from '$app/navigation'; // Только goto
 	import { slide } from 'svelte/transition';
 	import { Mail, Lock, ArrowRight, User, CheckCircle2 } from 'lucide-svelte';
 	import { cn } from '$lib/utils/ui';
@@ -68,7 +68,7 @@
 		loading = true;
 		try {
 			if (activeTab === 'signin') {
-				const res = await authService.login(email, password);
+				const res = await authService.login({ email, password });
 				if (res.mfaRequired) {
 					toasts.show('Two-factor authentication required', 'info');
 					goto('/auth/mfa/otp');
@@ -76,7 +76,6 @@
 					await completeAuthentication();
 				}
 			} else {
-				// Registration Flow (No MFA check here as per your feedback)
 				await authService.register({ username, email, password });
 				await completeAuthentication();
 			}
@@ -97,13 +96,13 @@
 	}
 </script>
 
-<div class="flex min-h-[100dvh] w-full flex-col items-center pt-[10dvh] sm:pt-[15dvh] p-4 bg-background transition-all">
+<div class="flex min-h-dvh w-full flex-col items-center pt-[10dvh] sm:pt-[15dvh] p-4 bg-background transition-all"> <!-- min-h-dvh -->
 	
 	<div class="flex flex-col items-center mb-10">
 		<h1 class="text-4xl font-bold tracking-tight text-white italic">Quingo</h1>
 	</div>
 
-	<div class="w-full max-w-[440px] rounded-[2rem] border border-white/5 bg-surface p-6 sm:p-10 shadow-2xl overflow-hidden h-fit">
+	<div class="w-full max-w-110 rounded-4xl border border-white/5 bg-surface p-6 sm:p-10 shadow-2xl overflow-hidden h-fit"> <!-- max-w-110, rounded-4xl -->
 		
 		<!-- Tabs -->
 		<div class="flex p-1.5 bg-slate-950/80 rounded-xl mb-8 border border-white/5">
