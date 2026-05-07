@@ -1,44 +1,47 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { 
-		Smartphone, LogOut, ShieldCheck, Monitor, Clock, Lock, AlertCircle, Key
+		Smartphone, LogOut, ShieldCheck, Monitor, Lock, AlertCircle
 	} from 'lucide-svelte';
 	
 	// UI & Logic
 	import Button from '$lib/components/ui/Button.svelte';
 	import { cn } from '$lib/utils/ui';
 	import { authService } from '$lib/api/auth';
-	import { userContext } from '$lib/runes/user.svelte';
+	import { securityContext } from '$lib/runes/security.svelte'; // Используем securityContext
 	import { toasts } from '$lib/runes/toast.svelte';
-	import type { SecurityStatusDto, SessionModel } from '$lib/types/auth';
+	import type { SessionModel } from '$lib/types/auth';
+
+    // Импортируем компонент модального окна для пароля
+    import PasswordModal from '$lib/components/security/PasswordModal.svelte';
 
 	// Local State
-	let securityStatus = $state<SecurityStatusDto | null>(null);
 	let sessions = $state<SessionModel[]>([]);
-	let loadingData = $state(true); // Общий лоадер для всех данных
 	let isRevokingAll = $state(false);
 	let isRevokingSingleSession: Record<string, boolean> = $state({}); // Для каждой сессии отдельно
+    let showPasswordModal = $state(false); // Состояние видимости модального окна для пароля
 
 	/**
 	 * Загрузка всех необходимых данных для страницы
+	 * (sessions, securityStatus уже загружается в (app)/+layout.svelte)
 	 */
-	async function loadSecurityData() {
+	async function loadPageData() {
 		try {
-			// Параллельная загрузка статуса безопасности и сессий
-			const [status, sData] = await Promise.all([
-				authService.getSecurityStatus(),
-				authService.getSessions()
-			]);
-			securityStatus = status;
-			sessions = sData;
+			// Обновляем только сессии, securityContext уже должен быть загружен
+			sessions = await authService.getSessions();
 		} catch (e: any) {
-			toasts.show(e.message || 'Failed to load security data', 'error');
-		} finally {
-			loadingData = false;
+			toasts.show(e.message || 'Failed to load sessions', 'error');
 		}
 	}
 
-	onMount(loadSecurityData);
+	onMount(() => {
+		// Ждем, пока securityContext загрузится глобально
+		$effect(() => {
+			if (!securityContext.isLoading && securityContext.status) {
+				loadPageData();
+			}
+		});
+	});
 
 	/**
 	 * Отзыв всех сессий кроме текущей
@@ -50,7 +53,7 @@
 		try {
 			await authService.logoutAll();
 			toasts.show('All other sessions have been revoked', 'success');
-			await loadSecurityData(); // Перезагружаем все данные
+			await loadPageData(); // Перезагружаем сессии
 		} catch (e: any) {
 			toasts.show(e.message || 'Action failed', 'error');
 		} finally {
@@ -64,15 +67,15 @@
 	async function handleRevokeSingleSession(tokenId: string) {
 		if (!confirm('Are you sure you want to revoke this session?')) return;
 
-		isRevokingSingleSession[tokenId] = true;
+		isRevokingSingleSession = { ...isRevokingSingleSession, [tokenId]: true }; // Используем spread для реактивности
 		try {
 			await authService.revokeSingleSession(tokenId);
 			toasts.show('Session revoked successfully', 'success');
-			await loadSecurityData(); // Перезагружаем все данные
+			await loadPageData(); // Перезагружаем сессии
 		} catch (e: any) {
 			toasts.show(e.message || 'Failed to revoke session', 'error');
 		} finally {
-			isRevokingSingleSession[tokenId] = false;
+			isRevokingSingleSession = { ...isRevokingSingleSession, [tokenId]: false };
 		}
 	}
 
@@ -80,12 +83,10 @@
 	 * Управление переключателем 2FA
 	 */
 	function handleToggleMfa() {
-		if (!securityStatus?.mfaEnabled) {
+		if (!securityContext.status?.mfaEnabled) {
 			window.location.href = '/settings/security/setup-mfa';
 		} else {
-			// Логика отключения 2FA:
-			// Здесь мы должны показать модальное окно для ввода OTP,
-			// а затем вызвать authService.disableMfa(code);
+			// Логика отключения 2FA: здесь будет модальное окно для ввода OTP
 			toasts.show('Disabling 2FA requires confirmation (not implemented yet)', 'info');
 		}
 	}
@@ -106,16 +107,16 @@
 <div class="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500 pb-20">
 	
 	<!-- Общий лоадер для страницы -->
-	{#if loadingData}
+	{#if securityContext.isLoading}
 		<div class="flex flex-col gap-4">
 			<div class="h-48 animate-pulse rounded-4xl bg-white/5"></div>
 			<div class="h-48 animate-pulse rounded-4xl bg-white/5"></div>
 			<div class="h-72 animate-pulse rounded-4xl bg-white/5"></div>
 		</div>
-	{:else if !securityStatus}
+	{:else if !securityContext.status}
 		<div class="text-center py-20 rounded-4xl border border-dashed border-white/10 bg-surface text-slate-500">
-			<p class="text-lg font-bold mb-2">Error Loading Data</p>
-			<p class="text-sm">Please try refreshing the page.</p>
+			<p class="text-lg font-bold mb-2">Error Loading Security Data</p>
+			<p class="text-sm">Please try refreshing the page or check your connection.</p>
 		</div>
 	{:else}
 		<!-- 1. PASSWORD SECTION -->
@@ -127,9 +128,13 @@
 					</div>
 					<h3 class="text-xl font-bold text-white">Password</h3>
 				</div>
-				<!-- Кнопка Set/Change Password -->
-				<Button variant="secondary" class="h-8 px-4 text-[10px] uppercase font-bold tracking-widest">
-					{#if securityStatus.passwordSet}
+				<!-- Кнопка Set/Change Password теперь открывает модальное окно -->
+				<Button 
+                    variant="secondary" 
+                    onclick={() => (showPasswordModal = true)} 
+                    class="h-8 px-4 text-[10px] uppercase font-bold tracking-widest"
+                >
+					{#if securityContext.status.passwordSet}
 						Change
 					{:else}
 						Set Password
@@ -137,8 +142,8 @@
 				</Button>
 			</div>
 			<div class="rounded-2xl border border-dashed border-white/10 p-8 text-center bg-slate-950/20">
-				{#if securityStatus.passwordSet}
-					<p class="text-sm text-slate-500 italic">Manage your password here.</p>
+				{#if securityContext.status.passwordSet}
+					<p class="text-sm text-slate-500 italic">Manage your account password here.</p>
 				{:else}
 					<p class="text-sm text-slate-500 italic">You logged in via OAuth. Set a password for direct login.</p>
 				{/if}
@@ -157,7 +162,7 @@
 			<div class="flex items-center justify-between rounded-2xl border border-white/5 bg-slate-950/50 p-6 transition-all hover:border-white/10">
 				<div class="flex items-center gap-4">
 					<div class="flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 bg-slate-900 shadow-inner">
-						<Smartphone class={securityStatus.mfaEnabled ? 'text-primary' : 'text-slate-600'} />
+						<Smartphone class={securityContext.status.mfaEnabled ? 'text-primary' : 'text-slate-600'} />
 					</div>
 					<div>
 						<p class="text-sm font-bold text-white">Authenticator App (OTP)</p>
@@ -165,19 +170,18 @@
 					</div>
 				</div>
 				
-				<!-- Premium Switch -->
 				<button 
 					onclick={handleToggleMfa}
 					aria-label="Toggle MFA"
 					class={cn(
 						"relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 focus:outline-none",
-						securityStatus.mfaEnabled ? "bg-primary shadow-[0_0_15px_rgba(249,115,22,0.3)]" : "bg-slate-800"
+						securityContext.status.mfaEnabled ? "bg-primary shadow-[0_0_15px_rgba(249,115,22,0.3)]" : "bg-slate-800"
 					)}
 				>
 					<span 
 						class={cn(
 							"pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition duration-300 ease-in-out",
-							securityStatus.mfaEnabled ? "translate-x-5" : "translate-x-0"
+							securityContext.status.mfaEnabled ? "translate-x-5" : "translate-x-0"
 						)}
 					></span>
 				</button>
@@ -197,7 +201,7 @@
 				<!-- Logout All Button (Styled as Revoke) -->
 				<button 
 					onclick={handleLogoutAll}
-					disabled={loadingData || sessions.length <= 1 || isRevokingAll}
+					disabled={securityContext.isLoading || sessions.length <= 1 || isRevokingAll} // Используем securityContext.isLoading
 					class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-red-500/5"
 				>
 					{#if isRevokingAll}
@@ -210,12 +214,12 @@
 			</div>
 
 			<div class="space-y-3">
-				{#if loadingData}
+				{#if securityContext.isLoading}
 					{#each Array(3) as _}
 						<div class="h-24 animate-pulse rounded-2xl bg-white/5 border border-white/5"></div>
 					{/each}
 				{:else if sessions.length === 0}
-					<div class="text-center py-10 rounded-2xl border border-dashed border-white/5">
+					<div class="text-center py-10 rounded-2xl border border-dashed border-white/10">
 						<p class="text-slate-500 text-sm">No active sessions found.</p>
 					</div>
 				{:else}
@@ -230,7 +234,6 @@
 										<p class="text-xs font-bold uppercase tracking-tight text-slate-200">
 											Device Session ({session.os} / {session.browser})
 										</p>
-										<!-- Отображение Current Session -->
 										{#if session.isCurrent}
 											<span class="rounded border border-green-500/20 bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-green-500">
 												Current
@@ -248,7 +251,6 @@
 								</div>
 							</div>
 							
-							<!-- Кнопка отзыва сессии (не отображается для текущей) -->
 							{#if !session.isCurrent}
 								<button 
 									onclick={() => handleRevokeSingleSession(session.tokenId)}
@@ -268,13 +270,21 @@
 				{/if}
 			</div>
 
-			<!-- Security Tip -->
-			<div class="mt-8 flex items-center gap-3 p-4 rounded-2xl bg-primary/5 border border-primary/10">
-				<AlertCircle size={16} class="text-primary shrink-0" />
-				<p class="text-[11px] text-slate-400 leading-relaxed font-medium">
+			<div class="mt-8 flex items-center gap-3 rounded-2xl border border-primary/10 bg-primary/5 p-4">
+				<AlertCircle size={16} class="shrink-0 text-primary" />
+				<p class="text-[11px] font-medium leading-relaxed text-slate-400">
 					If you notice any unfamiliar sessions, we recommend revoking them immediately and changing your password.
 				</p>
 			</div>
 		</div>
 	{/if}
 </div>
+
+<!-- Модальное окно для смены/установки пароля -->
+{#if showPasswordModal}
+    <PasswordModal 
+        isOpen={showPasswordModal} 
+        isPasswordSet={securityContext.status?.passwordSet || false} 
+        onClose={() => (showPasswordModal = false)} 
+    />
+{/if}

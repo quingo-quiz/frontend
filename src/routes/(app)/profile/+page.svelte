@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { userContext } from '$lib/runes/user.svelte';
-	import { securityContext } from '$lib/runes/security.svelte'; // <-- Новый импорт
+	import { securityContext } from '$lib/runes/security.svelte';
 	import { goto } from '$app/navigation';
-	import { Mail } from 'lucide-svelte';
-	import Button from '$lib/components/ui/Button.svelte';
+	import { Mail, ArrowRight } from 'lucide-svelte';
+	import Button from '$lib/components/ui/Button.svelte'; // Добавил, если кнопка нужна
 
 	$effect(() => {
 		if (!userContext.isLoading && !userContext.isAuthenticated) {
@@ -57,18 +57,21 @@
 					{securityContext.status.mfaEnabled ? 'Protected' : 'Disabled'}
 				</p>
 			</div>
+			<!-- Обновленная плашка Email Status -->
 			<div class="bg-surface border border-white/5 p-5 rounded-2xl">
                 <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-2">Email Status</p>
                 {#if securityContext.status.emailVerified}
                     <p class="text-lg font-bold text-green-400">Verified</p>
                 {:else}
-                    <p class="text-lg font-bold text-orange-400">Verification Required</p>
+                    <p class="text-lg font-bold text-orange-400 mb-2">Verification Required</p>
+                    <a href="/settings" class="inline-flex items-center gap-1.5 text-primary text-xs font-semibold hover:underline">
+                        Go to Settings <ArrowRight size={12} />
+                    </a>
                 {/if}
             </div>
 		</div>
 	</div>
 {:else}
-    <!-- Fallback, если что-то пошло не так после загрузки -->
     <div class="text-center py-20">
         <p class="text-xl text-red-500">Failed to load profile data.</p>
         <Button onclick={() => goto('/auth')} class="mt-4">Go to Login</Button>
