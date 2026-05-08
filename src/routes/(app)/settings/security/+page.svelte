@@ -160,32 +160,51 @@
 	{:else}
 		<!-- 1. PASSWORD SECTION -->
 		<div class="rounded-4xl border border-white/5 bg-surface p-6 shadow-2xl sm:p-10">
-			<div class="mb-6 flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<div class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-slate-950 text-primary">
+			<div class="mb-6 flex items-center justify-between gap-4">
+				<div class="flex items-center gap-3 min-w-0">
+					<div class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-slate-950 text-primary shrink-0">
 						<Lock size={20} />
 					</div>
-					<h3 class="text-xl font-bold text-white">Password</h3>
+					<div class="min-w-0">
+						<h3 class="text-xl font-bold text-white">Password</h3>
+					</div>
 				</div>
-				<!-- Кнопка Set/Change Password теперь открывает модальное окно -->
 				<Button 
-                    variant="secondary" 
-                    onclick={() => (showPasswordModal = true)} 
-                    class="h-8 px-4 text-[10px] uppercase font-bold tracking-widest"
-                >
+					variant={securityContext.status.passwordSet ? 'secondary' : 'primary'}
+					onclick={() => (showPasswordModal = true)} 
+					class={cn(
+						"shrink-0 h-10 px-5 text-[10px] uppercase font-bold tracking-widest",
+						!securityContext.status.passwordSet && "shadow-lg shadow-primary/20"
+					)}
+				>
 					{#if securityContext.status.passwordSet}
-						Change
+						Change Password
 					{:else}
 						Set Password
 					{/if}
 				</Button>
 			</div>
-			<div class="rounded-2xl border border-dashed border-white/10 p-8 text-center bg-slate-950/20">
-				{#if securityContext.status.passwordSet}
-					<p class="text-sm text-slate-500 italic">Manage your account password here.</p>
-				{:else}
-					<p class="text-sm text-slate-500 italic">You logged in via OAuth. Set a password for direct login.</p>
-				{/if}
+			<div class={cn(
+				"rounded-2xl border px-5 py-4 flex items-center justify-between gap-4",
+				securityContext.status.passwordSet
+					? "border-green-500/10 bg-green-500/5"
+					: "border-amber-500/10 bg-amber-500/5"
+			)}>
+				<p class="text-sm text-slate-300">
+					{#if securityContext.status.passwordSet}
+						Password configured.
+					{:else}
+						Password not set.
+					{/if}
+				</p>
+				<span class={cn(
+					"whitespace-nowrap rounded-full border px-3 py-1 text-[9px] font-bold uppercase tracking-widest",
+					securityContext.status.passwordSet
+						? "border-green-500/20 bg-green-500/10 text-green-500"
+						: "border-amber-500/20 bg-amber-500/10 text-amber-400"
+				)}>
+					{securityContext.status.passwordSet ? 'Configured' : 'Not Set'}
+				</span>
 			</div>
 		</div>
 

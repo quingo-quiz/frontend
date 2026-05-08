@@ -1,12 +1,11 @@
 <script lang="ts">
-	import { Lock, CheckCircle2, Save, X } from 'lucide-svelte';
+	import { Lock, Save, X } from 'lucide-svelte';
 	import { toasts } from '$lib/runes/toast.svelte';
 	import { authService } from '$lib/api/auth';
 	import { securityContext } from '$lib/runes/security.svelte';
 	import { userContext } from '$lib/runes/user.svelte'; // Для обновления passwordSet в userContext
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
-	import { cn } from '$lib/utils/ui';
 	import { fly } from 'svelte/transition';
 
 	// Пропсы для управления модальным окном и его поведением
@@ -102,37 +101,37 @@
 	<div 
 		class="fixed inset-0 z-1000 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
 		role="presentation"
-		onclick={onClose}
+		onclick={(e) => {
+			if (e.target === e.currentTarget) onClose();
+		}}
 		onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 	>
-		<dialog
-			open
+		<div
 			transition:fly={{ y: 20, duration: 300 }}
-			class="w-full max-w-md rounded-[2.5rem] border border-white/5 bg-surface p-8 shadow-2xl"
-			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
+			class="w-full max-w-md rounded-[2rem] border border-white/5 bg-surface p-6 shadow-2xl mx-auto"
 		>
-			<div class="mb-8 flex items-center justify-between">
-				<h3 class="text-xl font-bold text-white">
-					{#if isPasswordSet}Change Password{:else}Set Password{/if}
-				</h3>
+			<div class="mb-6 flex items-start justify-between gap-4">
+				<div class="min-w-0">
+					<h3 class="text-xl font-bold text-white">
+						{#if isPasswordSet}Change password{:else}Set password{/if}
+					</h3>
+				</div>
 				<button onclick={onClose} class="rounded-full p-2 text-slate-500 hover:bg-white/5 hover:text-white transition-colors">
 					<X size={20} />
 				</button>
 			</div>
 
-			<form class="space-y-6" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+			<form class="space-y-5" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
 				{#if isPasswordSet}
-					<Input bind:value={oldPassword} type="password" label="Current Password" placeholder="••••••••" icon={Lock} error={fieldErrors.oldPassword} />
+					<Input bind:value={oldPassword} type="password" label="Current password" placeholder="Enter current password" icon={Lock} error={fieldErrors.oldPassword} />
 				{/if}
-				<Input bind:value={newPassword} type="password" label="New Password" placeholder="••••••••" icon={Lock} error={fieldErrors.newPassword} />
-				<Input bind:value={confirmNewPassword} type="password" label="Confirm New Password" placeholder="••••••••" icon={CheckCircle2} error={fieldErrors.confirmNewPassword || (newPasswordMismatch ? 'Passwords do not match' : null)} />
-                
+				<Input bind:value={newPassword} type="password" label="New password" placeholder="Create a new password" icon={Lock} error={fieldErrors.newPassword} />
+				<Input bind:value={confirmNewPassword} type="password" label="Confirm new password" placeholder="Repeat new password" icon={Lock} error={fieldErrors.confirmNewPassword || (newPasswordMismatch ? 'Passwords do not match' : null)} />
+
 				<Button type="submit" isLoading={loading} disabled={!isFormValid()} class="w-full py-4 text-base">
-					{#if isPasswordSet}Update Password{:else}Set Password{/if}
-					<Save size={18} class="ml-2" />
+					{#if isPasswordSet}Update password{:else}Set password{/if}
 				</Button>
 			</form>
-		</dialog>
+		</div>
 	</div>
 {/if}
