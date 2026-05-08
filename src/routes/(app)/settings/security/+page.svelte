@@ -1,21 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { 
-		Smartphone, LogOut, ShieldCheck, Monitor, Lock, AlertCircle, Tablet
-	} from 'lucide-svelte';
-		/**
-		 * Render device icon based on OS
-		 */
-		function renderDeviceIcon(os?: string) {
-			const osLower = os?.toLowerCase() || '';
-			if (osLower.includes('iphone') || osLower.includes('android')) {
-				return Smartphone;
-			} else if (osLower.includes('ipad')) {
-				return Tablet;
-			}
-			return Monitor;
-		}
+	import { LogOut, ShieldCheck, Monitor, Lock } from 'lucide-svelte';
 	
 	// UI & Logic
 	import Button from '$lib/components/ui/Button.svelte';
@@ -26,8 +12,9 @@
 	import type { SessionModel } from '$lib/types/auth';
 
     // Импортируем компонент модального окна для пароля
-    import PasswordModal from '$lib/components/security/PasswordModal.svelte';
+	import PasswordModal from '$lib/components/security/PasswordModal.svelte';
 	import OtpDisableModal from '$lib/components/security/OtpDisableModal.svelte';
+	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 
 	// Local State
 	let sessions = $state<SessionModel[]>([]);
@@ -35,6 +22,8 @@
 	let isRevokingSingleSession: Record<string, boolean> = $state({}); // Для каждой сессии отдельно
     let showPasswordModal = $state(false); // Состояние видимости модального окна для пароля
     let showOtpDisableModal = $state(false);
+	let showConfirmRevokeAll = $state(false);
+	let showConfirmRevokeSingle = $state<null | { tokenId: string, title?: string, message?: string }>(null);
 
 	/**
 	 * Загрузка всех необходимых данных для страницы
@@ -62,8 +51,7 @@
 	 * Отзыв всех сессий кроме текущей
 	 */
 	async function handleLogoutAll() {
-		if (!confirm('This will log you out from all other devices. Continue?')) return;
-		
+		showConfirmRevokeAll = false;
 		isRevokingAll = true;
 		try {
 			await authService.logoutAll();
@@ -80,12 +68,20 @@
 	 * Отзыв одной конкретной сессии
 	 */
 	async function handleRevokeSingleSession(tokenId: string) {
-		if (!confirm('Are you sure you want to revoke this session?')) return;
-
-		isRevokingSingleSession = { ...isRevokingSingleSession, [tokenId]: true }; // Используем spread для реактивности
+		// hide confirm
+		showConfirmRevokeSingle = null;
+		isRevokingSingleSession = { ...isRevokingSingleSession, [tokenId]: true };
 		try {
 			await authService.revokeSingleSession(tokenId);
 			toasts.show('Session revoked successfully', 'success');
+			// If the revoked session was current, perform logout
+			const s = sessions.find(s => s.tokenId === tokenId);
+			const isCurrent = (s as any)?.current ?? s?.isCurrent;
+			if (isCurrent) {
+				// log out the user
+				await authService.logout();
+				return; // authService.logout will handle userContext logout and redirect
+			}
 			await loadPageData(); // Перезагружаем сессии
 		} catch (e: any) {
 			toasts.show(e.message || 'Failed to revoke session', 'error');
@@ -204,9 +200,9 @@
 			
 			<div class="flex flex-col gap-5 rounded-2xl border border-white/5 bg-slate-950/50 p-6 transition-all hover:border-white/10 sm:flex-row sm:items-center sm:justify-between">
 				<div class="flex items-center gap-4">
-					<div class="flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 bg-slate-900 shadow-inner">
-						<Smartphone class={securityContext.status.mfaEnabled ? 'text-primary' : 'text-slate-600'} />
-					</div>
+						<div class="flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 bg-slate-900 shadow-inner">
+							<Monitor class={securityContext.status.mfaEnabled ? 'text-primary' : 'text-slate-600'} />
+						</div>
 					<div>
 						<p class="text-sm font-bold text-white">Authenticator App)</p>
 						<p class="text-xs text-slate-500">Use an authenticator app to generate one time passwords</p>
@@ -245,7 +241,7 @@
 				
 				<!-- Logout All Button - Always Active -->
 				<button 
-					onclick={handleLogoutAll}
+					onclick={() => (showConfirmRevokeAll = true)}
 					disabled={securityContext.isLoading || isRevokingAll}
 					class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-red-500/5"
 				>
@@ -269,33 +265,24 @@
 					</div>
 				{:else}
 					{#each sessions as session}
+						{@const isCurrent = (session as any)?.current ?? session.isCurrent}
 						<div class={cn(
 							"relative flex items-center justify-between rounded-2xl border p-4 transition-all duration-300 group",
-							session.isCurrent 
-									? "border-green-500/30 bg-linear-to-r from-green-500/5 to-transparent hover:border-green-500/50 shadow-lg shadow-green-500/5"
+							isCurrent
+								? "border-green-500/30 bg-green-500/5 hover:border-green-500/40"
 								: "border-white/5 bg-slate-950/30 hover:border-white/10 hover:bg-slate-950/50"
 						)}>
-							<!-- Left Accent Bar for Current Session -->
-							{#if session.isCurrent}
-									<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-linear-to-b from-green-500 to-green-500/50"></div>
-							{/if}
 
 							<!-- Content -->
 							<div class="flex items-center gap-4 flex-1">
-								<!-- Icon -->
+								<!-- Single unified Icon for all sessions -->
 								<div class={cn(
 									"flex h-12 w-12 items-center justify-center rounded-xl shadow-inner transition-all duration-300",
-									session.isCurrent 
+									isCurrent
 										? "bg-green-500/10 text-green-500 border border-green-500/20"
 										: "bg-slate-900 text-slate-500 border border-slate-800 group-hover:text-primary group-hover:bg-slate-800"
 								)}>
-									{#if session.os?.toLowerCase().includes('iphone') || session.os?.toLowerCase().includes('android')}
-										<Smartphone size={20} strokeWidth={1.5} />
-									{:else if session.os?.toLowerCase().includes('ipad')}
-										<Tablet size={20} strokeWidth={1.5} />
-									{:else}
-										<Monitor size={20} strokeWidth={1.5} />
-									{/if}
+									<Monitor size={20} strokeWidth={1.5} />
 								</div>
 
 								<!-- Session Info -->
@@ -305,7 +292,7 @@
 										<p class="text-xs font-bold uppercase tracking-tight text-slate-100">
 											{session.browser} on {session.os}
 										</p>
-										{#if session.isCurrent}
+										{#if isCurrent}
 											<span class="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-green-500 whitespace-nowrap">
 												Your Device
 											</span>
@@ -325,9 +312,9 @@
 							</div>
 
 							<!-- Revoke Button -->
-							{#if !session.isCurrent}
+							{#if !isCurrent}
 								<button 
-									onclick={() => handleRevokeSingleSession(session.tokenId)}
+									onclick={() => (showConfirmRevokeSingle = { tokenId: session.tokenId, title: 'Revoke session', message: 'Are you sure you want to revoke this session?' })}
 									disabled={isRevokingSingleSession[session.tokenId]}
 									title="Revoke this session"
 									class="ml-4 p-2.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
@@ -338,21 +325,10 @@
 										<LogOut size={18} strokeWidth={1.5} />
 									{/if}
 								</button>
-							{:else}
-								<div class="ml-4 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-[9px] font-bold uppercase tracking-widest text-green-500 whitespace-nowrap">
-									Active Now
-								</div>
 							{/if}
 						</div>
 					{/each}
 				{/if}
-			</div>
-
-			<div class="mt-8 flex items-center gap-3 rounded-2xl border border-primary/10 bg-primary/5 p-4">
-				<AlertCircle size={16} class="shrink-0 text-primary" />
-				<p class="text-[11px] font-medium leading-relaxed text-slate-400">
-					If you notice any unfamiliar sessions, we recommend revoking them immediately and changing your password.
-				</p>
 			</div>
 		</div>
 	{/if}
@@ -372,5 +348,29 @@
 		isOpen={showOtpDisableModal}
 		onClose={() => (showOtpDisableModal = false)}
 		onDisabled={handleOtpDisabled}
+	/>
+{/if}
+
+<!-- Confirm Dialogs -->
+<ConfirmDialog
+	isOpen={showConfirmRevokeAll}
+	title="Revoke All Sessions"
+	message="This will log you out from all other devices. Continue?"
+	confirmLabel="Revoke All"
+	destructive={true}
+	onConfirm={handleLogoutAll}
+	onClose={() => (showConfirmRevokeAll = false)}
+/> 
+
+{#if showConfirmRevokeSingle}
+	{@const tokenId = showConfirmRevokeSingle.tokenId}
+	<ConfirmDialog
+		isOpen={true}
+		title={showConfirmRevokeSingle.title}
+		message={showConfirmRevokeSingle.message}
+		confirmLabel="Revoke"
+		destructive={true}
+		onConfirm={() => handleRevokeSingleSession(tokenId)}
+		onClose={() => (showConfirmRevokeSingle = null)}
 	/>
 {/if}
