@@ -100,13 +100,17 @@
 
 {#if isOpen}
 	<div 
-		class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+		class="fixed inset-0 z-1000 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+		role="presentation"
 		onclick={onClose}
+		onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
 	>
-		<div 
+		<dialog
+			open
 			transition:fly={{ y: 20, duration: 300 }}
 			class="w-full max-w-md rounded-[2.5rem] border border-white/5 bg-surface p-8 shadow-2xl"
 			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="mb-8 flex items-center justify-between">
 				<h3 class="text-xl font-bold text-white">
@@ -123,12 +127,12 @@
 				{/if}
 				<Input bind:value={newPassword} type="password" label="New Password" placeholder="••••••••" icon={Lock} error={fieldErrors.newPassword} />
 				<Input bind:value={confirmNewPassword} type="password" label="Confirm New Password" placeholder="••••••••" icon={CheckCircle2} error={fieldErrors.confirmNewPassword || (newPasswordMismatch ? 'Passwords do not match' : null)} />
-				
+                
 				<Button type="submit" isLoading={loading} disabled={!isFormValid()} class="w-full py-4 text-base">
 					{#if isPasswordSet}Update Password{:else}Set Password{/if}
 					<Save size={18} class="ml-2" />
 				</Button>
 			</form>
-		</div>
+		</dialog>
 	</div>
 {/if}

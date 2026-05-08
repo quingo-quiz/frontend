@@ -10,6 +10,7 @@
 		error = null,
 		icon: Icon = null,
 		class: className = '',
+		id: propId = undefined,
 		...rest
 	} = $props();
 
@@ -17,7 +18,7 @@
 	let isPassword = $derived(type === 'password');
 
 	// Генерируем id, если не передан — это нужно для доступности label->input
-	let id = rest.id ?? `input-${Math.random().toString(36).slice(2, 9)}`;
+	let id = propId ?? rest.id ?? `input-${Math.random().toString(36).slice(2, 9)}`;
 	let errorId = `${id}-error`;
 </script>
 
@@ -55,7 +56,7 @@
 		{#if isPassword}
 			<button
 				type="button"
-				on:click={() => (showPassword = !showPassword)}
+				onclick={() => (showPassword = !showPassword)}
 				aria-label={showPassword ? 'Hide password' : 'Show password'}
 				class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
 			>

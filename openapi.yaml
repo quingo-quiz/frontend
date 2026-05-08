@@ -1,0 +1,1683 @@
+openapi: 3.0.0
+info:
+  title: Auth Service
+  version: 0.0.0
+tags:
+  - name: Auth
+  - name: OAuth2
+  - name: User
+  - name: Admin
+  - name: MFA
+paths:
+  /admin/users/{userId}/block:
+    post:
+      operationId: AdminUserRoutes_blockUser
+      summary: Блокировать пользователя
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/uuid'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin
+  /admin/users/{userId}/roles:
+    patch:
+      operationId: AdminUserRoutes_updateUserRoles
+      summary: Обновить роли пользователя
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/uuid'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleUpdateRequest'
+  /admin/users/{userId}/unblock:
+    post:
+      operationId: AdminUserRoutes_unblockUser
+      summary: Разблокировать пользователя
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/uuid'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Admin
+  /auth:
+    post:
+      operationId: AuthRoutes_login
+      summary: Вход
+      parameters:
+        - name: Auth-Strategy
+          in: header
+          required: false
+          schema:
+            type: string
+            default: cookie
+      responses:
+        '200':
+          description: The request has succeeded.
+          headers:
+            Set-Cookie:
+              required: false
+              schema:
+                type: array
+                items:
+                  type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AuthResponseModel'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AuthResponseModel'
+                  timestamp:
+                    type: string
+                    format: date-time
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+  /logout:
+    post:
+      operationId: AuthRoutes_logout
+      summary: Выход из системы
+      parameters:
+        - name: Auth-Strategy
+          in: header
+          required: false
+          schema:
+            type: string
+            default: cookie
+        - name: Cookie
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          headers:
+            Set-Cookie:
+              required: false
+              schema:
+                type: array
+                items:
+                  type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+  /logout/all:
+    post:
+      operationId: AuthRoutes_logoutAll
+      summary: Выход со всех устройств
+      parameters:
+        - name: Auth-Strategy
+          in: header
+          required: false
+          schema:
+            type: string
+            default: cookie
+        - name: Cookie
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          headers:
+            Set-Cookie:
+              required: false
+              schema:
+                type: array
+                items:
+                  type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+  /logout/{tokenId}:
+    delete:
+      operationId: AuthRoutes_logoutToken
+      summary: Завершить сессию по ID токена
+      parameters:
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/uuid'
+        - name: Auth-Strategy
+          in: header
+          required: false
+          schema:
+            type: string
+            default: cookie
+        - name: Cookie
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+  /mfa/otp/connect:
+    post:
+      operationId: MfaRoutes_otpConnect
+      summary: Инициализация включения OTP в рамках MFA
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/OtpConnectDto'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - MFA
+  /mfa/otp/connect/confirm:
+    post:
+      operationId: MfaRoutes_otpConnectConfirm
+      summary: Подтверждение включения OTP в рамках MFA
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - MFA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+  /mfa/otp/disable:
+    post:
+      operationId: MfaRoutes_otpDisable
+      summary: Отключение OTP
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - MFA
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpDisableRequest'
+  /mfa/otp/verify:
+    post:
+      operationId: AuthRoutes_otpVerify
+      summary: Проверка OTP кода в рамках 2FA flow
+      parameters:
+        - name: Auth-Strategy
+          in: header
+          required: false
+          schema:
+            type: string
+            default: cookie
+      responses:
+        '200':
+          description: The request has succeeded.
+          headers:
+            Set-Cookie:
+              required: false
+              schema:
+                type: array
+                items:
+                  type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AuthResponseModel'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OtpVerifyRequest'
+  /oauth2/authorization/github:
+    get:
+      operationId: AuthRoutes_oauth2Github
+      summary: Инициализация OAuth2 flow через GitHub
+      parameters: []
+      responses:
+        '302':
+          description: Redirection
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - OAuth2
+  /oauth2/authorization/google:
+    get:
+      operationId: AuthRoutes_oauth2Google
+      summary: Инициализация OAuth2 flow через Google
+      parameters: []
+      responses:
+        '302':
+          description: Redirection
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - OAuth2
+  /refresh:
+    post:
+      operationId: AuthRoutes_refresh
+      summary: Обновление токена
+      parameters:
+        - name: Auth-Strategy
+          in: header
+          required: false
+          schema:
+            type: string
+            default: cookie
+        - name: Cookie
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The request has succeeded.
+          headers:
+            Set-Cookie:
+              required: false
+              schema:
+                type: array
+                items:
+                  type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AuthResponseModel'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Auth
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+  /register:
+    post:
+      operationId: AuthRoutes_register
+      summary: Регистрация
+      parameters:
+        - name: Auth-Strategy
+          in: header
+          required: false
+          schema:
+            type: string
+            default: cookie
+      responses:
+        '200':
+          description: The request has succeeded.
+          headers:
+            Set-Cookie:
+              required: false
+              schema:
+                type: array
+                items:
+                  type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/AuthResponseModel'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+  /sessions:
+    get:
+      operationId: AuthRoutes_getSessions
+      summary: Получить активные сессии
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SessionModel'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Auth
+  /user/email/verify:
+    patch:
+      operationId: UserRoutes_verifyEmail
+      summary: Подтверждение email
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailRequest'
+  /user/email/verify/resend:
+    post:
+      operationId: UserRoutes_resendEmailVerification
+      summary: Повторная отправка письма подтверждения email
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - User
+  /user/me:
+    patch:
+      operationId: UserRoutes_updateUserInfo
+      summary: Обновить информацию о пользователе
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/User'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+    get:
+      operationId: UserRoutes_info
+      summary: Информация о пользователе
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/User'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - User
+  /user/password/change:
+    post:
+      operationId: UserRoutes_changePassword
+      summary: Смена пароля
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access is forbidden.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+  /user/password/reset:
+    post:
+      operationId: UserRoutes_resetPassword
+      summary: Сброс пароля
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+  /user/password/send-reset:
+    post:
+      operationId: UserRoutes_sendResetPassword
+      summary: Отправка письма для сброса пароля
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendResetPasswordRequest'
+  /user/password/set:
+    post:
+      operationId: UserRoutes_setPassword
+      summary: Установка пароля (если ещё не установлен)
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPasswordRequest'
+  /user/security-status:
+    get:
+      operationId: UserRoutes_getSecurityStatus
+      summary: Получить статус безопасности пользователя
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/SecurityStatusDto'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          description: Access is unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - User
+components:
+  schemas:
+    AccountStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - BLOCKED
+        - DELETED
+    AuthRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          minLength: 3
+          maxLength: 100
+          format: email
+        password:
+          type: string
+          minLength: 6
+          maxLength: 50
+    AuthResponseModel:
+      type: object
+      required:
+        - mfaRequired
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        mfaTempToken:
+          type: string
+        mfaRequired:
+          type: boolean
+    ChangePasswordRequest:
+      type: object
+      required:
+        - oldPassword
+        - newPassword
+      properties:
+        oldPassword:
+          type: string
+          minLength: 6
+          maxLength: 50
+          description: Текущий пароль
+        newPassword:
+          type: string
+          minLength: 6
+          maxLength: 50
+          description: Новый пароль
+      description: Запрос на смену пароля
+    ErrorResponse:
+      type: object
+      required:
+        - status
+        - statusMessage
+        - message
+        - path
+        - method
+        - timestamp
+      properties:
+        status:
+          type: integer
+          format: int32
+        statusMessage:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        method:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        fieldErrors:
+          type: object
+          additionalProperties:
+            type: string
+        rejectedValues:
+          type: object
+          additionalProperties: {}
+        details:
+          type: object
+          additionalProperties: {}
+    MfaType:
+      type: string
+      enum:
+        - OTP
+    OAuth2Provider:
+      type: string
+      enum:
+        - GOOGLE
+        - GITHUB
+    OtpConnectDto:
+      type: object
+      required:
+        - secretUri
+      properties:
+        secretUri:
+          type: string
+    OtpDisableRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 32
+    OtpVerifyRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 32
+        mfaTempToken:
+          type: string
+          minLength: 1
+          maxLength: 500
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refresh_token
+      properties:
+        refresh_token:
+          type: string
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 50
+        email:
+          type: string
+          minLength: 3
+          maxLength: 100
+          format: email
+        password:
+          type: string
+          minLength: 6
+          maxLength: 50
+    ResetPasswordRequest:
+      type: object
+      required:
+        - resetToken
+        - newPassword
+      properties:
+        resetToken:
+          type: string
+          description: Токен сброса пароля
+        newPassword:
+          type: string
+          minLength: 6
+          maxLength: 50
+          description: Новый пароль
+      description: Запрос на сброс пароля
+    RoleUpdateRequest:
+      type: object
+      required:
+        - userRoles
+      properties:
+        userRoles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Roles'
+          minItems: 1
+          description: Новый набор ролей
+      description: Запрос на обновление ролей пользователя
+    Roles:
+      type: string
+      enum:
+        - USER
+        - ADMIN
+    SecurityStatusDto:
+      type: object
+      required:
+        - userId
+        - email
+        - emailVerified
+        - passwordSet
+        - mfaEnabled
+        - mfaTypes
+        - roles
+        - linkedProviders
+        - accountStatus
+      properties:
+        userId:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID пользователя
+        email:
+          type: string
+          description: Email пользователя
+        emailVerified:
+          type: boolean
+          description: Подтвержден ли email
+        passwordSet:
+          type: boolean
+          description: Установлен ли пароль
+        mfaEnabled:
+          type: boolean
+          description: Включена ли MFA
+        mfaTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/MfaType'
+          description: Типы MFA
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Roles'
+          description: Роли пользователя
+        linkedProviders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OAuth2Provider'
+          description: Связанные OAuth2 провайдеры
+        accountStatus:
+          allOf:
+            - $ref: '#/components/schemas/AccountStatus'
+          description: Статус аккаунта
+      description: Статус безопасности пользователя
+    SendResetPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          minLength: 3
+          maxLength: 100
+          format: email
+          description: Email пользователя
+      description: Запрос на отправку письма для сброса пароля
+    SessionModel:
+      type: object
+      required:
+        - tokenId
+        - sessionId
+        - issuedAt
+        - expiresAt
+      properties:
+        tokenId:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID токена
+        sessionId:
+          allOf:
+            - $ref: '#/components/schemas/uuid'
+          description: ID сессии
+        issuedAt:
+          type: string
+          format: date-time
+          description: Время выдачи
+        expiresAt:
+          type: string
+          format: date-time
+          description: Время истечения срока действия
+        browser:
+          type: string
+          description: Браузер
+        os:
+          type: string
+          description: Операционная система
+        device:
+          type: string
+          description: Устройство
+        ipAddress:
+          type: string
+          description: IP адрес
+      description: Информация о сессии
+    SetPasswordRequest:
+      type: object
+      required:
+        - password
+      properties:
+        password:
+          type: string
+          minLength: 6
+          maxLength: 50
+          description: Новый пароль
+      description: Запрос на установку пароля
+    UpdateUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          maxLength: 50
+        bio:
+          type: string
+          maxLength: 500
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - email
+        - roles
+        - emailVerified
+        - mfaEnabled
+        - accountStatus
+      properties:
+        id:
+          $ref: '#/components/schemas/uuid'
+        username:
+          type: string
+        email:
+          type: string
+        bio:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Roles'
+        emailVerified:
+          type: boolean
+        mfaEnabled:
+          type: boolean
+        accountStatus:
+          $ref: '#/components/schemas/AccountStatus'
+      description: Пользователь
+    VerifyEmailRequest:
+      type: object
+      required:
+        - verificationToken
+      properties:
+        verificationToken:
+          type: string
+          description: Токен подтверждения email
+      description: Запрос на подтверждение email
+    uuid:
+      type: string
+      format: uuid
+servers:
+  - url: https://quingo.arhr.tech/api/auth
+    description: Production server
+    variables: {}

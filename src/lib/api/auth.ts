@@ -69,14 +69,14 @@ export const authService = {
             headers: { 'Content-Type': 'application/json', 'Auth-Strategy': 'cookie' },
             body: JSON.stringify(data)
         });
-        const result: ApiResponse<AuthResponseModel> = await res.json();
+        const raw = await res.json();
 
-        if (res.status === 403 && result.data?.mfaRequired) {
-            sessionStorage.setItem('mfa_temp_token', result.data.mfaTempToken || '');
+        if (res.status === 403 && raw?.data?.mfaRequired) {
+            sessionStorage.setItem('mfa_temp_token', raw.data.mfaTempToken || '');
             sessionStorage.setItem('mfa_token_timestamp', Date.now().toString());
             return { mfaRequired: true };
         }
-        if (!res.ok) throw result as ApiError;
+        if (!res.ok) throw raw as ApiError;
         return { mfaRequired: false };
     },
 

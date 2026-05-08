@@ -117,7 +117,7 @@
 		<form class="flex flex-col gap-5" onsubmit={(e) => { e.preventDefault(); handleAuth(); }}>
 			{#if activeTab === 'create'}
 				<div transition:slide={{ duration: 200 }}>
-					<Input bind:value={username} label="Username" placeholder="alex_morgan" icon={User} error={fieldErrors.username} />
+					<Input bind:value={username} label="Username" placeholder="username" icon={User} error={fieldErrors.username} />
 				</div>
 			{/if}
 
@@ -134,7 +134,7 @@
 
 			{#if activeTab === 'create'}
 				<div transition:slide={{ duration: 200 }}>
-					<Input bind:value={confirmPassword} type="password" label="Confirm Password" placeholder="Repeat password" icon={CheckCircle2} error={fieldErrors.confirmPassword || (passwordMismatch ? 'Passwords do not match' : null)} />
+					<Input bind:value={confirmPassword} type="password" label="Confirm Password" placeholder="Repeat password" icon={Lock} error={fieldErrors.confirmPassword || (passwordMismatch ? 'Passwords do not match' : null)} />
 				</div>
 			{/if}
 

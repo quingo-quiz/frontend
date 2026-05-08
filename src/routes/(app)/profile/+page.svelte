@@ -2,14 +2,32 @@
 	import { userContext } from '$lib/runes/user.svelte';
 	import { securityContext } from '$lib/runes/security.svelte';
 	import { goto } from '$app/navigation';
-	import { Mail, ArrowRight } from 'lucide-svelte';
-	import Button from '$lib/components/ui/Button.svelte'; // Добавил, если кнопка нужна
+	import { Mail } from 'lucide-svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import { authService } from '$lib/api/auth';
+	import { toasts } from '$lib/runes/toast.svelte';
+
+	let isResendingVerification = $state(false);
 
 	$effect(() => {
 		if (!userContext.isLoading && !userContext.isAuthenticated) {
 			goto('/auth');
 		}
 	});
+
+	async function handleResendVerification() {
+		if (!securityContext.status || securityContext.status.emailVerified || isResendingVerification) return;
+
+		isResendingVerification = true;
+		try {
+			await authService.resendEmailVerification();
+			toasts.show(`Verification email sent to ${securityContext.status.email}`, 'success');
+		} catch (e: any) {
+			toasts.show(e.message || 'Failed to resend verification email', 'error');
+		} finally {
+			isResendingVerification = false;
+		}
+	}
 </script>
 
 {#if userContext.isLoading || securityContext.isLoading}
@@ -64,9 +82,16 @@
                     <p class="text-lg font-bold text-green-400">Verified</p>
                 {:else}
                     <p class="text-lg font-bold text-orange-400 mb-2">Verification Required</p>
-                    <a href="/settings" class="inline-flex items-center gap-1.5 text-primary text-xs font-semibold hover:underline">
-                        Go to Settings <ArrowRight size={12} />
-                    </a>
+					<p class="text-xs text-slate-400 mb-4 leading-relaxed">
+					</p>
+					<Button
+						variant="secondary"
+						isLoading={isResendingVerification}
+						onclick={handleResendVerification}
+						class="w-full sm:w-auto px-4 py-2 text-xs font-bold uppercase tracking-widest"
+					>
+						Resend email
+					</Button>
                 {/if}
             </div>
 		</div>

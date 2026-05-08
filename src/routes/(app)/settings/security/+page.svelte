@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { 
 		Smartphone, LogOut, ShieldCheck, Monitor, Lock, AlertCircle
 	} from 'lucide-svelte';
@@ -14,12 +15,14 @@
 
     // Импортируем компонент модального окна для пароля
     import PasswordModal from '$lib/components/security/PasswordModal.svelte';
+	import OtpDisableModal from '$lib/components/security/OtpDisableModal.svelte';
 
 	// Local State
 	let sessions = $state<SessionModel[]>([]);
 	let isRevokingAll = $state(false);
 	let isRevokingSingleSession: Record<string, boolean> = $state({}); // Для каждой сессии отдельно
     let showPasswordModal = $state(false); // Состояние видимости модального окна для пароля
+    let showOtpDisableModal = $state(false);
 
 	/**
 	 * Загрузка всех необходимых данных для страницы
@@ -84,11 +87,14 @@
 	 */
 	function handleToggleMfa() {
 		if (!securityContext.status?.mfaEnabled) {
-			window.location.href = '/settings/security/setup-mfa';
+			goto('/settings/security/setup-mfa');
 		} else {
-			// Логика отключения 2FA: здесь будет модальное окно для ввода OTP
-			toasts.show('Disabling 2FA requires confirmation (not implemented yet)', 'info');
+			showOtpDisableModal = true;
 		}
+	}
+
+	async function handleOtpDisabled() {
+		await securityContext.refreshStatus();
 	}
 
 	/**
@@ -108,10 +114,34 @@
 	
 	<!-- Общий лоадер для страницы -->
 	{#if securityContext.isLoading}
-		<div class="flex flex-col gap-4">
-			<div class="h-48 animate-pulse rounded-4xl bg-white/5"></div>
-			<div class="h-48 animate-pulse rounded-4xl bg-white/5"></div>
-			<div class="h-72 animate-pulse rounded-4xl bg-white/5"></div>
+		<div class="space-y-6">
+			<div class="rounded-4xl border border-white/5 bg-surface p-6 shadow-2xl sm:p-10">
+				<div class="flex items-center gap-3">
+					<div class="h-10 w-10 animate-pulse rounded-xl bg-white/5"></div>
+					<div class="space-y-2">
+						<div class="h-4 w-36 animate-pulse rounded-full bg-white/5"></div>
+						<div class="h-3 w-56 animate-pulse rounded-full bg-white/5"></div>
+					</div>
+				</div>
+				<div class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					{#each Array(3) as _}
+						<div class="h-28 animate-pulse rounded-2xl border border-white/5 bg-white/5"></div>
+					{/each}
+				</div>
+			</div>
+			<div class="rounded-4xl border border-white/5 bg-surface p-6 shadow-2xl sm:p-10">
+				<div class="flex items-center gap-3">
+					<div class="h-10 w-10 animate-pulse rounded-xl bg-white/5"></div>
+					<div class="space-y-2">
+						<div class="h-4 w-40 animate-pulse rounded-full bg-white/5"></div>
+						<div class="h-3 w-52 animate-pulse rounded-full bg-white/5"></div>
+					</div>
+				</div>
+				<div class="mt-8 space-y-4">
+					<div class="h-24 animate-pulse rounded-2xl border border-white/5 bg-white/5"></div>
+					<div class="h-24 animate-pulse rounded-2xl border border-white/5 bg-white/5"></div>
+				</div>
+			</div>
 		</div>
 	{:else if !securityContext.status}
 		<div class="text-center py-20 rounded-4xl border border-dashed border-white/10 bg-surface text-slate-500">
@@ -159,32 +189,34 @@
 				<h3 class="text-xl font-bold text-white">Security Layer</h3>
 			</div>
 			
-			<div class="flex items-center justify-between rounded-2xl border border-white/5 bg-slate-950/50 p-6 transition-all hover:border-white/10">
+			<div class="flex flex-col gap-5 rounded-2xl border border-white/5 bg-slate-950/50 p-6 transition-all hover:border-white/10 sm:flex-row sm:items-center sm:justify-between">
 				<div class="flex items-center gap-4">
 					<div class="flex h-12 w-12 items-center justify-center rounded-xl border border-white/5 bg-slate-900 shadow-inner">
 						<Smartphone class={securityContext.status.mfaEnabled ? 'text-primary' : 'text-slate-600'} />
 					</div>
 					<div>
-						<p class="text-sm font-bold text-white">Authenticator App (OTP)</p>
-						<p class="text-xs text-slate-500">Google Authenticator, Authy or Microsoft Authenticator</p>
+						<p class="text-sm font-bold text-white">Authenticator App)</p>
+						<p class="text-xs text-slate-500">Use an authenticator app to generate one time passwords</p>
 					</div>
 				</div>
 				
-				<button 
-					onclick={handleToggleMfa}
-					aria-label="Toggle MFA"
-					class={cn(
-						"relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 focus:outline-none",
-						securityContext.status.mfaEnabled ? "bg-primary shadow-[0_0_15px_rgba(249,115,22,0.3)]" : "bg-slate-800"
-					)}
-				>
-					<span 
+				<div class="flex flex-col items-start gap-3 sm:items-end">
+					<button 
+						onclick={handleToggleMfa}
+						aria-label="Toggle MFA"
 						class={cn(
-							"pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition duration-300 ease-in-out",
-							securityContext.status.mfaEnabled ? "translate-x-5" : "translate-x-0"
+							"relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 focus:outline-none",
+							securityContext.status.mfaEnabled ? "bg-primary shadow-[0_0_15px_rgba(249,115,22,0.3)]" : "bg-slate-800"
 						)}
-					></span>
-				</button>
+					>
+						<span 
+							class={cn(
+								"pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition duration-300 ease-in-out",
+								securityContext.status.mfaEnabled ? "translate-x-5" : "translate-x-0"
+							)}
+						></span>
+					</button>
+				</div>
 			</div>
 		</div>
 
@@ -287,4 +319,12 @@
         isPasswordSet={securityContext.status?.passwordSet || false} 
         onClose={() => (showPasswordModal = false)} 
     />
+{/if}
+
+{#if showOtpDisableModal}
+	<OtpDisableModal
+		isOpen={showOtpDisableModal}
+		onClose={() => (showOtpDisableModal = false)}
+		onDisabled={handleOtpDisabled}
+	/>
 {/if}

@@ -41,13 +41,13 @@
 		{#if !emailSent}
 			<h2 class="text-2xl font-bold mb-2 text-white">Forgot Password?</h2>
 			<p class="text-slate-500 text-sm mb-8 font-medium max-w-sm mx-auto">
-				Enter your email and we'll send you a link to reset your password.
+				Enter your email and we'll send you recovery instructions.
 			</p>
 
 			<form class="space-y-6" onsubmit={(e) => { e.preventDefault(); handleSendResetLink(); }}>
 				<Input bind:value={email} label="Email Address" placeholder="you@example.com" icon={Mail} error={fieldErrors.email} />
 				<Button type="submit" class="w-full py-4 text-base" isLoading={loading}>
-					Send Reset Link <Send size={18} class="ml-2" />
+					Send
 				</Button>
 			</form>
 		{:else}

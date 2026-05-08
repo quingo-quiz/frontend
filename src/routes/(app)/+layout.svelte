@@ -1,6 +1,7 @@
 <!-- src/routes/(app)/+layout.svelte -->
 <script lang="ts">
 	import Header from '$lib/components/layout/Header.svelte';
+	import EmailVerificationBanner from '$lib/components/layout/EmailVerificationBanner.svelte';
     import { onMount } from 'svelte';
     import { authService } from '$lib/api/auth';
     import { userContext } from '$lib/runes/user.svelte';
@@ -11,15 +12,13 @@
 	let { children } = $props();
 
     onMount(async () => {
-        if (!userContext.isLoading && userContext.isAuthenticated) {
-            return;
-        }
-
         try {
-            const user = await authService.fetchUserInfo();
+            const user = userContext.isAuthenticated
+                ? userContext.user
+                : await authService.fetchUserInfo();
+
             userContext.set(user);
-            
-            // НОВОЕ: Загружаем статус безопасности, если пользователь авторизован
+
             if (user) {
                 await securityContext.refreshStatus();
             } else {
@@ -48,6 +47,7 @@
 {:else}
     <div class="min-h-dvh flex flex-col">
         <Header />
+            <EmailVerificationBanner />
         <main class="grow container mx-auto px-4 py-8">
             {@render children()}
         </main>

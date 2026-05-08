@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation'; // Только goto
-	import { ArrowLeft, Copy, Check, QrCode } from 'lucide-svelte';
+	import { ArrowLeft, Copy, Check } from 'lucide-svelte';
 	import QRCode from 'qrcode';
 	import { cn } from '$lib/utils/ui';
 	
@@ -9,6 +9,7 @@
 	import { authService } from '$lib/api/auth';
 	import { toasts } from '$lib/runes/toast.svelte';
 	import { userContext } from '$lib/runes/user.svelte';
+	import { securityContext } from '$lib/runes/security.svelte';
 
 	let loading = $state(false);
 	let initializing = $state(true);
@@ -19,6 +20,15 @@
 	let digits = $state(['', '', '', '', '', '']);
 	let inputRefs: HTMLInputElement[] = [];
 	let hasError = $state(false);
+
+	function isOtpAlreadyEnabledError(error: any) {
+		const message = String(error?.message || error?.statusMessage || '').toLowerCase();
+		return error?.status === 400 && (message.includes('already') || message.includes('enabled'));
+	}
+
+	async function goBackToSecurity() {
+		await goto('/settings/security', { replaceState: true, noScroll: true });
+	}
 
 	onMount(async () => {
 		if (!userContext.isAuthenticated) {
@@ -35,8 +45,13 @@
 				color: { dark: '#0f172a', light: '#ffffff' }
 			});
 		} catch (err: any) {
+			if (isOtpAlreadyEnabledError(err)) {
+				await goBackToSecurity();
+				return;
+			}
+
 			toasts.show(err.message || 'Failed to initialize MFA', 'error');
-			goto('/settings/security');
+			await goBackToSecurity();
 		} finally {
 			initializing = false;
 		}
@@ -77,13 +92,21 @@
 		loading = true;
 		try {
 			await authService.confirmMfaConnect({ code }); // Передаем объект
+			await securityContext.refreshStatus();
 			
 			const freshUser = await authService.fetchUserInfo();
 			userContext.set(freshUser);
+			securityContext.set({ ...securityContext.status!, mfaEnabled: true });
 			
 			toasts.show('MFA is now active!', 'success');
-			goto('/settings/security');
+			await goBackToSecurity();
 		} catch (err: any) {
+			if (isOtpAlreadyEnabledError(err)) {
+				toasts.show('MFA is already enabled', 'success');
+				await goBackToSecurity();
+				return;
+			}
+
 			hasError = true;
 			digits = ['', '', '', '', '', ''];
 			inputRefs[0].focus();
@@ -106,10 +129,32 @@
 		</div>
 
 		{#if initializing}
-			<div class="py-20 flex flex-col items-center gap-4 text-slate-500">
-				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-				<span class="text-lg font-bold">Encrypting...</span>
-				<p class="text-sm">Generating secure keys for your account.</p>
+			<div class="space-y-8 animate-pulse">
+				<div class="text-center">
+					<div class="mx-auto mb-6 h-44 w-44 rounded-2xl bg-white/5 sm:h-52 sm:w-52"></div>
+					<div class="mx-auto h-5 w-40 rounded-full bg-white/5"></div>
+					<div class="mx-auto mt-3 h-3 w-64 max-w-full rounded-full bg-white/5"></div>
+				</div>
+
+				<div class="rounded-2xl border border-white/5 bg-slate-950/50 p-4">
+					<div class="flex items-center justify-between gap-4">
+						<div class="min-w-0 flex-1 space-y-2">
+							<div class="h-3 w-24 rounded-full bg-white/5"></div>
+							<div class="h-3 w-full rounded-full bg-white/5"></div>
+						</div>
+						<div class="h-10 w-10 rounded-xl bg-white/5"></div>
+					</div>
+				</div>
+
+				<div class="pt-2 border-t border-white/5">
+					<div class="mb-6 h-3 w-44 rounded-full bg-white/5 mx-auto"></div>
+					<div class="grid grid-cols-6 gap-2 sm:gap-3 max-w-[320px] mx-auto">
+						{#each Array(6) as _}
+							<div class="aspect-square rounded-xl border border-white/10 bg-white/5"></div>
+						{/each}
+					</div>
+					<div class="mt-8 h-14 rounded-xl bg-white/5"></div>
+				</div>
 			</div>
 		{:else}
 			<div class="space-y-8">
@@ -120,7 +165,7 @@
 					</div>
 					<h3 class="text-white font-bold text-lg mb-2">Scan with App</h3>
 					<p class="text-slate-500 text-xs px-4">
-						Open your authenticator app (Google Authenticator, Authy) and scan this code to link your account.
+						Open your authenticator app and scan this code to link your account.
 					</p>
 				</div>
 
@@ -137,7 +182,7 @@
 
 				<!-- Step 3: Verify -->
 				<div class="pt-6 border-t border-white/5">
-					<p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Confirm Activation</p>
+					<p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Enter Code from APP</p>
 					
 					<form onsubmit={(e) => { e.preventDefault(); handleConfirm(); }} class="space-y-8">
 						<div class="flex justify-center">
@@ -151,7 +196,7 @@
 										oninput={(e) => handleInput(e, i)}
 										onkeydown={(e) => handleKeyDown(e, i)}
 										class={cn(
-											"w-full aspect-square max-w-[44px] sm:max-w-[48px] text-center text-xl font-bold rounded-xl border bg-input-bg transition-all focus:outline-none focus:ring-2",
+											"w-full aspect-square max-w-11 sm:max-w-12 text-center text-xl font-bold rounded-xl border bg-input-bg transition-all focus:outline-none focus:ring-2",
 											hasError 
 												? "border-red-500/50 text-red-500 ring-red-500/10" 
 												: "border-white/10 text-white focus:border-primary/50 focus:ring-primary/20"
@@ -162,7 +207,7 @@
 						</div>
 
 						<Button type="submit" class="w-full py-4 text-sm uppercase tracking-widest shadow-lg shadow-primary/10" isLoading={loading} disabled={digits.join('').length < 6}>
-							Confirm & Activate
+							Activate
 						</Button>
 					</form>
 				</div>
