@@ -69,17 +69,17 @@
 			</div>
 		</div>
 
-		<form class="grid grid-cols-1 gap-6 md:grid-cols-2" onsubmit={(e) => { e.preventDefault(); saveChanges(); }}>
+		<form class="grid grid-cols-1 gap-6 lg:grid-cols-2" onsubmit={(e) => { e.preventDefault(); saveChanges(); }}>
 			<Input label="Username" bind:value={currentUsername} placeholder="Username" />
 			
 			<div class="flex flex-col gap-1.5">
 				<label class="px-1 text-[11px] font-medium uppercase tracking-wider text-slate-500" for="email">Email Address</label>
-				<div id="email" class="rounded-lg border border-white/5 bg-slate-950/50 p-3 text-sm italic text-slate-400">
+				<div id="email" class="rounded-lg border border-white/5 bg-slate-950/50 p-3 text-sm italic text-slate-400 min-w-0 break-all">
 					{userContext.user?.email}
 				</div>
 			</div>
 			
-			<div class="flex flex-col gap-1.5 md:col-span-2">
+			<div class="flex flex-col gap-1.5 lg:col-span-2">
 				<label class="px-1 text-[11px] font-medium uppercase tracking-wider text-slate-500" for="bio">Bio</label>
 				<textarea 
 					id="bio"
@@ -89,7 +89,7 @@
 				></textarea>
 			</div>
 
-			<div class="pt-4 md:col-span-2">
+			<div class="pt-4 lg:col-span-2">
 				<Button type="submit" isLoading={loading} disabled={!hasChanges} class="w-full px-10 sm:w-auto">
 					Save Changes
 				</Button>

@@ -160,7 +160,7 @@
 	{:else}
 		<!-- 1. PASSWORD SECTION -->
 		<div class="rounded-4xl border border-white/5 bg-surface p-6 shadow-2xl sm:p-10">
-			<div class="mb-6 flex items-center justify-between gap-4">
+			<div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 				<div class="flex items-center gap-3 min-w-0">
 					<div class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-slate-950 text-primary shrink-0">
 						<Lock size={20} />
@@ -173,7 +173,7 @@
 					variant={securityContext.status.passwordSet ? 'secondary' : 'primary'}
 					onclick={() => (showPasswordModal = true)} 
 					class={cn(
-						"shrink-0 h-10 px-5 text-[10px] uppercase font-bold tracking-widest",
+						"h-10 px-5 text-[10px] uppercase font-bold tracking-widest sm:shrink-0",
 						!securityContext.status.passwordSet && "shadow-lg shadow-primary/20"
 					)}
 				>

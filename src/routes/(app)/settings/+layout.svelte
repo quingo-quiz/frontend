@@ -13,28 +13,28 @@
 	let activeId = $derived(String(page.url.pathname) === '/settings/security' ? 'security' : 'general');
 </script>
 
+<!-- 1. MOBILE NAVIGATION (Segmented Control) - FULL WIDTH -->
+<nav class="md:hidden sticky top-16 z-40 w-screen bg-background/95 backdrop-blur-sm border-b border-white/5 px-4 py-3">
+	<div class="max-w-6xl mx-auto flex p-1 bg-slate-950/80 rounded-xl border border-white/5 shadow-inner">
+		{#each menuItems as item}
+			<a 
+				href={item.href}
+				class={cn(
+					"flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-lg transition-all duration-200",
+					activeId === item.id 
+						? "bg-primary text-white shadow-md shadow-primary/20" 
+						: "text-slate-500 hover:text-slate-400"
+				)}
+			>
+				<item.icon size={14} strokeWidth={2.5} />
+				{item.label}
+			</a>
+		{/each}
+	</div>
+</nav>
+
 <div class="max-w-6xl mx-auto flex flex-col md:flex-row gap-4 md:gap-8 px-4">
 	
-	<!-- 1. MOBILE NAVIGATION (Segmented Control) -->
-	<nav class="md:hidden sticky top-20 z-30 py-2 bg-background/95 backdrop-blur-sm">
-		<div class="flex p-1 bg-slate-950/80 rounded-xl border border-white/5 shadow-inner">
-			{#each menuItems as item}
-				<a 
-					href={item.href}
-					class={cn(
-						"flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-lg transition-all duration-200",
-						activeId === item.id 
-							? "bg-primary text-white shadow-md shadow-primary/20" 
-							: "text-slate-500 hover:text-slate-400"
-					)}
-				>
-					<item.icon size={14} strokeWidth={2.5} />
-					{item.label}
-				</a>
-			{/each}
-		</div>
-	</nav>
-
 	<!-- 2. DESKTOP SIDEBAR (Оставляем как было) -->
 	<aside class="hidden md:block w-72 shrink-0">
 		<div class="flex flex-col gap-1.5 sticky top-24">

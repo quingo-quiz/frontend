@@ -2,6 +2,39 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation'; // Только goto
 	import { slide } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
+
+	// Action to animate between 0 and auto height smoothly
+	function autoHeight(node: HTMLElement, isOpen: boolean = false) {
+		node.style.overflow = 'hidden';
+		node.style.transition = 'max-height 260ms cubic-bezier(.22,.88,.36,1), opacity 200ms ease';
+		node.style.opacity = isOpen ? '1' : '0';
+		node.style.maxHeight = isOpen ? `${node.scrollHeight}px` : '0px';
+
+		return {
+			update(open: boolean) {
+				if (open) {
+					// expand
+					node.style.opacity = '1';
+					const height = node.scrollHeight;
+					node.style.maxHeight = height + 'px';
+					// remove explicit maxHeight after transition so it can grow naturally
+					setTimeout(() => {
+						if (node.style.maxHeight !== '0px') node.style.maxHeight = 'none';
+					}, 300);
+				} else {
+					// collapse
+					// fix current height then transition to 0
+					const height = node.scrollHeight;
+					node.style.maxHeight = height + 'px';
+					requestAnimationFrame(() => {
+						node.style.opacity = '0';
+						node.style.maxHeight = '0px';
+					});
+				}
+			}
+		};
+	}
 	import { Mail, Lock, ArrowRight, User, CheckCircle2 } from 'lucide-svelte';
 	import { cn } from '$lib/utils/ui';
 	
@@ -115,28 +148,22 @@
 		</div>
 
 		<form class="flex flex-col gap-5" onsubmit={(e) => { e.preventDefault(); handleAuth(); }}>
-			{#if activeTab === 'create'}
-				<div transition:slide={{ duration: 200 }}>
-					<Input bind:value={username} label="Username" placeholder="username" icon={User} error={fieldErrors.username} />
-				</div>
-			{/if}
+			<div use:autoHeight={activeTab === 'create'} class="overflow-hidden">
+				<Input bind:value={username} label="Username" placeholder="username" icon={User} error={fieldErrors.username} disabled={activeTab !== 'create'} />
+			</div>
 
 			<Input bind:value={email} label="Email Address" placeholder="you@example.com" icon={Mail} error={fieldErrors.email} />
 			
 			<div class="space-y-2">
 				<Input bind:value={password} type="password" label="Password" placeholder="Enter password" icon={Lock} error={fieldErrors.password} />
-				{#if activeTab === 'signin'}
-					<div transition:slide={{ duration: 150 }} class="flex justify-end px-1">
-						<a href="/auth/recovery" class="text-[10px] font-semibold text-primary uppercase tracking-wider hover:text-primary-hover transition-colors">Forgot password?</a>
-					</div>
-				{/if}
+				<div use:autoHeight={activeTab === 'signin'} class="flex justify-end px-1">
+					<a href="/auth/recovery" class={cn(activeTab !== 'signin' ? 'pointer-events-none opacity-0' : 'transition-colors text-[10px] font-semibold text-primary uppercase tracking-wider hover:text-primary-hover')} aria-hidden={activeTab !== 'signin'}>Forgot password?</a>
+				</div>
 			</div>
 
-			{#if activeTab === 'create'}
-				<div transition:slide={{ duration: 200 }}>
-					<Input bind:value={confirmPassword} type="password" label="Confirm Password" placeholder="Repeat password" icon={Lock} error={fieldErrors.confirmPassword || (passwordMismatch ? 'Passwords do not match' : null)} />
-				</div>
-			{/if}
+			<div use:autoHeight={activeTab === 'create'} class="overflow-hidden">
+				<Input bind:value={confirmPassword} type="password" label="Confirm Password" placeholder="Repeat password" icon={Lock} error={fieldErrors.confirmPassword || (passwordMismatch ? 'Passwords do not match' : null)} disabled={activeTab !== 'create'} />
+			</div>
 
 			<Button type="submit" class="w-full py-4 text-base mt-2" isLoading={loading}>
 				{activeTab === 'signin' ? 'Sign In' : 'Create Account'} 
