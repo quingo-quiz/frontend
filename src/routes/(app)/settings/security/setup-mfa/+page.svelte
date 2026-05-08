@@ -91,14 +91,17 @@
 
 		loading = true;
 		try {
-			await authService.confirmMfaConnect({ code }); // Передаем объект
-			await securityContext.refreshStatus();
+			await authService.confirmMfaConnect({ code });
 			
-			const freshUser = await authService.fetchUserInfo();
-			userContext.set(freshUser);
-			securityContext.set({ ...securityContext.status!, mfaEnabled: true });
+			// Обновляем локальное состояние без вызова refreshStatus()
+			// чтобы избежать race condition и повторного initMfaConnect
+			if (securityContext.status) {
+				securityContext.set({ ...securityContext.status, mfaEnabled: true });
+			}
 			
 			toasts.show('MFA is now active!', 'success');
+			
+			// На settings/security (app)/+layout.svelte будет правильно загружать свежий статус
 			await goBackToSecurity();
 		} catch (err: any) {
 			if (isOtpAlreadyEnabledError(err)) {

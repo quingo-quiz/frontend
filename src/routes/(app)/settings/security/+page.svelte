@@ -2,8 +2,20 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { 
-		Smartphone, LogOut, ShieldCheck, Monitor, Lock, AlertCircle
+		Smartphone, LogOut, ShieldCheck, Monitor, Lock, AlertCircle, Tablet
 	} from 'lucide-svelte';
+		/**
+		 * Render device icon based on OS
+		 */
+		function renderDeviceIcon(os?: string) {
+			const osLower = os?.toLowerCase() || '';
+			if (osLower.includes('iphone') || osLower.includes('android')) {
+				return Smartphone;
+			} else if (osLower.includes('ipad')) {
+				return Tablet;
+			}
+			return Monitor;
+		}
 	
 	// UI & Logic
 	import Button from '$lib/components/ui/Button.svelte';
@@ -108,6 +120,7 @@
 			hour: '2-digit', minute: '2-digit' 
 		});
 	}
+
 </script>
 
 <div class="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500 pb-20">
@@ -230,10 +243,10 @@
 					<h3 class="text-xl font-bold text-white">Active Sessions</h3>
 				</div>
 				
-				<!-- Logout All Button (Styled as Revoke) -->
+				<!-- Logout All Button - Always Active -->
 				<button 
 					onclick={handleLogoutAll}
-					disabled={securityContext.isLoading || sessions.length <= 1 || isRevokingAll} // Используем securityContext.isLoading
+					disabled={securityContext.isLoading || isRevokingAll}
 					class="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-red-500/5"
 				>
 					{#if isRevokingAll}
@@ -245,9 +258,9 @@
 				</button>
 			</div>
 
-			<div class="space-y-3">
+			<div class="space-y-2">
 				{#if securityContext.isLoading}
-					{#each Array(3) as _}
+					{#each Array(2) as _}
 						<div class="h-24 animate-pulse rounded-2xl bg-white/5 border border-white/5"></div>
 					{/each}
 				{:else if sessions.length === 0}
@@ -256,46 +269,79 @@
 					</div>
 				{:else}
 					{#each sessions as session}
-						<div class="flex items-center justify-between rounded-2xl border border-white/5 bg-slate-950/30 p-4 transition-all hover:border-white/10 group">
-							<div class="flex items-center gap-4">
-								<div class="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-slate-500 shadow-inner group-hover:text-primary group-hover:bg-slate-800 transition-all duration-300">
-									<Monitor size={20} strokeWidth={1.5} />
+						<div class={cn(
+							"relative flex items-center justify-between rounded-2xl border p-4 transition-all duration-300 group",
+							session.isCurrent 
+									? "border-green-500/30 bg-linear-to-r from-green-500/5 to-transparent hover:border-green-500/50 shadow-lg shadow-green-500/5"
+								: "border-white/5 bg-slate-950/30 hover:border-white/10 hover:bg-slate-950/50"
+						)}>
+							<!-- Left Accent Bar for Current Session -->
+							{#if session.isCurrent}
+									<div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl bg-linear-to-b from-green-500 to-green-500/50"></div>
+							{/if}
+
+							<!-- Content -->
+							<div class="flex items-center gap-4 flex-1">
+								<!-- Icon -->
+								<div class={cn(
+									"flex h-12 w-12 items-center justify-center rounded-xl shadow-inner transition-all duration-300",
+									session.isCurrent 
+										? "bg-green-500/10 text-green-500 border border-green-500/20"
+										: "bg-slate-900 text-slate-500 border border-slate-800 group-hover:text-primary group-hover:bg-slate-800"
+								)}>
+									{#if session.os?.toLowerCase().includes('iphone') || session.os?.toLowerCase().includes('android')}
+										<Smartphone size={20} strokeWidth={1.5} />
+									{:else if session.os?.toLowerCase().includes('ipad')}
+										<Tablet size={20} strokeWidth={1.5} />
+									{:else}
+										<Monitor size={20} strokeWidth={1.5} />
+									{/if}
 								</div>
-								<div class="space-y-1">
-									<div class="flex items-center gap-2">
-										<p class="text-xs font-bold uppercase tracking-tight text-slate-200">
-											Device Session ({session.os} / {session.browser})
+
+								<!-- Session Info -->
+								<div class="space-y-2 min-w-0">
+									<!-- Title with Current Badge -->
+									<div class="flex items-center gap-2 flex-wrap">
+										<p class="text-xs font-bold uppercase tracking-tight text-slate-100">
+											{session.browser} on {session.os}
 										</p>
 										{#if session.isCurrent}
-											<span class="rounded border border-green-500/20 bg-green-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-green-500">
-												Current
+											<span class="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-green-500 whitespace-nowrap">
+												Your Device
 											</span>
 										{/if}
 									</div>
-									<div class="flex flex-col gap-0.5">
-										<span class="text-[10px] text-slate-400 font-medium">
-											Logged in: {formatSessionDate(session.issuedAt)} from {session.ipAddress}
-										</span>
-										<span class="text-[9px] text-slate-600 font-mono tracking-tighter opacity-70 italic uppercase">
-											Token ID: {session.tokenId.split('-')[0]}...
-										</span>
+
+									<!-- Metadata -->
+									<div class="space-y-0.5">
+										<p class="text-[10px] text-slate-400 font-medium">
+											Signed in {formatSessionDate(session.issuedAt)}
+										</p>
+										<p class="text-[9px] text-slate-500 font-mono tracking-tighter">
+											{session.ipAddress}
+										</p>
 									</div>
 								</div>
 							</div>
-							
+
+							<!-- Revoke Button -->
 							{#if !session.isCurrent}
 								<button 
 									onclick={() => handleRevokeSingleSession(session.tokenId)}
 									disabled={isRevokingSingleSession[session.tokenId]}
 									title="Revoke this session"
-									class="p-3 rounded-xl text-red-500/30 hover:text-red-500 hover:bg-red-500/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+									class="ml-4 p-2.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
 								>
 									{#if isRevokingSingleSession[session.tokenId]}
 										<div class="h-4 w-4 animate-spin border-2 border-current border-t-transparent rounded-full"></div>
 									{:else}
-										<LogOut size={20} strokeWidth={2} />
+										<LogOut size={18} strokeWidth={1.5} />
 									{/if}
 								</button>
+							{:else}
+								<div class="ml-4 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-[9px] font-bold uppercase tracking-widest text-green-500 whitespace-nowrap">
+									Active Now
+								</div>
 							{/if}
 						</div>
 					{/each}
