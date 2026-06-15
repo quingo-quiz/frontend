@@ -1,4 +1,4 @@
-import { PUBLIC_API_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
 import { userContext } from '$lib/runes/user.svelte';
 import { goto } from '$app/navigation';
 import type { 
@@ -10,7 +10,7 @@ import type {
 } from '$lib/types/auth';
 import type { ApiResponse, ApiError } from '$lib/types/auth';
 
-const SERVICE_URL = `${PUBLIC_API_URL}/auth`;
+const SERVICE_URL = `${env.PUBLIC_API_URL}/auth`;
 
 // Флаг для предотвращения множественных редиректов при провале рефреша
 let isRefreshing = false;
