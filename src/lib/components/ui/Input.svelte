@@ -17,8 +17,10 @@
 	let showPassword = $state(false);
 	let isPassword = $derived(type === 'password');
 
-	// Генерируем id, если не передан — это нужно для доступности label->input
-	let id = propId ?? rest.id ?? `input-${Math.random().toString(36).slice(2, 9)}`;
+	// Генерируем id, если не передан — это нужно для доступности label->input.
+	// $props.id() даёт стабильный id (совпадает на сервере и клиенте — без mismatch при гидратации).
+	const uid = $props.id();
+	let id = propId ?? rest.id ?? `input-${uid}`;
 	let errorId = `${id}-error`;
 </script>
 

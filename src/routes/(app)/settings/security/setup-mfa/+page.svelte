@@ -57,7 +57,7 @@
 		}
 	});
 
-	let rawSecret = $derived(() => {
+	let rawSecret = $derived.by(() => {
 		try {
 			const url = new URL(secretUri);
 			return url.searchParams.get('secret') || '';
@@ -65,7 +65,7 @@
 	});
 
 	function handleCopy() {
-		navigator.clipboard.writeText(rawSecret());
+		navigator.clipboard.writeText(rawSecret);
 		copied = true;
 		setTimeout(() => (copied = false), 2000);
 		toasts.show('Copied!', 'success');
@@ -176,7 +176,7 @@
 				<div class="bg-slate-950/50 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
 					<div class="text-left overflow-hidden mr-4">
 						<p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Manual Key</p>
-						<p class="text-xs font-mono text-slate-300 truncate tracking-tight">{rawSecret()}</p>
+						<p class="text-xs font-mono text-slate-300 truncate tracking-tight">{rawSecret}</p>
 					</div>
 					<button onclick={handleCopy} class="p-2.5 rounded-xl bg-white/5 text-slate-400 hover:text-primary hover:bg-white/10 transition-all shrink-0">
 						{#if copied} <Check size={16} /> {:else} <Copy size={16} /> {/if}

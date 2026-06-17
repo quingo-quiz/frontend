@@ -28,7 +28,7 @@
 	let newPasswordMismatch = $derived(
 		confirmNewPassword.length > 0 && newPassword !== confirmNewPassword
 	);
-	let isFormValid = $derived(() => {
+	let isFormValid = $derived.by(() => {
 		if (isPasswordSet) { // Если меняем пароль
 			return oldPassword.length >= 6 && newPassword.length >= 6 && newPassword === confirmNewPassword;
 		} else { // Если устанавливаем пароль
@@ -128,7 +128,7 @@
 				<Input bind:value={newPassword} type="password" label="New password" placeholder="Create a new password" icon={Lock} error={fieldErrors.newPassword} />
 				<Input bind:value={confirmNewPassword} type="password" label="Confirm new password" placeholder="Repeat new password" icon={Lock} error={fieldErrors.confirmNewPassword || (newPasswordMismatch ? 'Passwords do not match' : null)} />
 
-				<Button type="submit" isLoading={loading} disabled={!isFormValid()} class="w-full py-4 text-base">
+				<Button type="submit" isLoading={loading} disabled={!isFormValid} class="w-full py-4 text-base">
 					{#if isPasswordSet}Update password{:else}Set password{/if}
 				</Button>
 			</form>

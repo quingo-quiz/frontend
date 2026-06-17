@@ -44,16 +44,16 @@
 				cleanupAndRedirect();
 			}
 		}, 1000);
-
-		// Убеждаемся, что inputRefs существует перед попыткой фокуса
-		$effect(() => {
-			if (inputRefs[0]) {
-				inputRefs[0].focus();
-			}
-		});
 	});
 
 	onDestroy(() => clearInterval(timerInterval));
+
+	// Автофокус первого поля, когда ref привязан (на верхнем уровне — не внутри onMount)
+	$effect(() => {
+		if (inputRefs[0]) {
+			inputRefs[0].focus();
+		}
+	});
 
 	function cleanupAndRedirect() {
 		clearInterval(timerInterval);

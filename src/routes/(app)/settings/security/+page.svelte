@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { LogOut, ShieldCheck, Monitor, Lock } from 'lucide-svelte';
 	
@@ -38,13 +37,11 @@
 		}
 	}
 
-	onMount(() => {
-		// Ждем, пока securityContext загрузится глобально
-		$effect(() => {
-			if (!securityContext.isLoading && securityContext.status) {
-				loadPageData();
-			}
-		});
+	// Ждем, пока securityContext загрузится глобально, и подгружаем сессии
+	$effect(() => {
+		if (!securityContext.isLoading && securityContext.status) {
+			loadPageData();
+		}
 	});
 
 	/**

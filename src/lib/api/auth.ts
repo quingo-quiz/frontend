@@ -12,8 +12,19 @@ import type { ApiResponse, ApiError } from '$lib/types/auth';
 
 const SERVICE_URL = `${env.PUBLIC_API_URL}/auth`;
 
-// Флаг для предотвращения множественных редиректов при провале рефреша
-let isRefreshing = false;
+// Общий промис рефреша: параллельные 401-запросы дожидаются ОДНОГО рефреша,
+// а не разлогинивают пользователя, пока рефреш ещё идёт.
+let refreshPromise: Promise<boolean> | null = null;
+
+function refreshSession(headers: Record<string, string>): Promise<boolean> {
+    if (!refreshPromise) {
+        refreshPromise = fetch(`${SERVICE_URL}/refresh`, { method: 'POST', headers })
+            .then((res) => res.ok)
+            .catch(() => false)
+            .finally(() => { refreshPromise = null; });
+    }
+    return refreshPromise;
+}
 
 async function authorizedFetch(url: string, options: RequestInit = {}): Promise<Response> {
     const defaultHeaders = {
@@ -21,42 +32,25 @@ async function authorizedFetch(url: string, options: RequestInit = {}): Promise<
         'Auth-Strategy': 'cookie'
     };
 
-    let response = await fetch(url, {
+    const doFetch = () => fetch(url, {
         ...options,
         headers: { ...defaultHeaders, ...options.headers }
     });
 
-    if (response.status === 401 && !isRefreshing) {
-        isRefreshing = true;
-        console.warn('Unauthorized request, attempting token refresh...');
-        
-        try {
-            const refreshRes = await fetch(`${SERVICE_URL}/refresh`, {
-                method: 'POST',
-                headers: defaultHeaders
-            });
+    let response = await doFetch();
 
-            if (refreshRes.ok) {
-                console.log('Token refreshed successfully, retrying original request...');
-                // Повторяем исходный запрос с новыми куками
-                response = await fetch(url, {
-                    ...options,
-                    headers: { ...defaultHeaders, ...options.headers }
-                });
-            } else {
-                console.error('Token refresh failed. Logging out...');
-                userContext.logout();
-                if (typeof window !== 'undefined') goto('/auth');
-                throw new Error('Session expired. Please log in again.');
-            }
-        } finally {
-            isRefreshing = false;
+    if (response.status === 401) {
+        // Если рефреш уже идёт — дожидаемся его, не запуская второй и не разлогинивая раньше времени
+        const refreshed = await refreshSession(defaultHeaders);
+
+        if (refreshed) {
+            // Повторяем исходный запрос с новыми куками
+            response = await doFetch();
+        } else {
+            userContext.logout();
+            if (typeof window !== 'undefined') goto('/auth');
+            throw new Error('Session expired. Please log in again.');
         }
-    } else if (response.status === 401 && isRefreshing) {
-        // Если уже идет рефреш, не пытаемся рефрешить снова, просто выходим
-        userContext.logout();
-        if (typeof window !== 'undefined') goto('/auth');
-        throw new Error('Session expired. Please log in again.');
     }
 
     return response;
@@ -131,16 +125,16 @@ export const authService = {
 
     async getSessions(): Promise<SessionModel[]> {
         const res = await authorizedFetch(`${SERVICE_URL}/sessions`);
-        const result: ApiResponse<SessionModel[]> = await res.json();
-        if (!res.ok) throw await res.json() as ApiError;
-        return result.data; 
+        const result = await res.json();
+        if (!res.ok) throw result as ApiError;
+        return (result as ApiResponse<SessionModel[]>).data;
     },
 
     async initMfaConnect(): Promise<OtpConnectDto> {
         const res = await authorizedFetch(`${SERVICE_URL}/mfa/otp/connect`, { method: 'POST' });
-        const result: ApiResponse<OtpConnectDto> = await res.json();
-        if (!res.ok) throw await res.json() as ApiError;
-        return result.data;
+        const result = await res.json();
+        if (!res.ok) throw result as ApiError;
+        return (result as ApiResponse<OtpConnectDto>).data;
     },
 
     async confirmMfaConnect(data: OtpVerifyRequest): Promise<void> {
@@ -166,16 +160,16 @@ export const authService = {
             method: 'PATCH',
             body: JSON.stringify(data)
         });
-        const result: ApiResponse<User> = await res.json();
-        if (!res.ok) throw await res.json() as ApiError;
-        return result.data;
+        const result = await res.json();
+        if (!res.ok) throw result as ApiError;
+        return (result as ApiResponse<User>).data;
     },
 
     async getSecurityStatus(): Promise<SecurityStatusDto> {
         const res = await authorizedFetch(`${SERVICE_URL}/user/security-status`);
-        const result: ApiResponse<SecurityStatusDto> = await res.json();
-        if (!res.ok) throw await res.json() as ApiError;
-        return result.data;
+        const result = await res.json();
+        if (!res.ok) throw result as ApiError;
+        return (result as ApiResponse<SecurityStatusDto>).data;
     },
 
     async changePassword(data: ChangePasswordRequest): Promise<void> {
