@@ -7,7 +7,7 @@
 </script>
 
 <!-- Позиционирование сверху по центру -->
-<div class="fixed top-6 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-3 w-full max-w-[400px] px-4">
+<div class="fixed top-6 left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-3 w-full max-w-[400px] px-4">
     {#each toasts.list as toast (toast.id)}
         <div 
             animate:flip={{ duration: 200 }}

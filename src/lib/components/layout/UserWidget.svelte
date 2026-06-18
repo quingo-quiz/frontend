@@ -2,7 +2,7 @@
 	import { userContext } from '$lib/runes/user.svelte';
 	import { authService } from '$lib/api/auth';
 	import { cn } from '$lib/utils/ui';
-	import { User, Settings, LogOut, ChevronDown } from 'lucide-svelte';
+	import { User, Settings, LogOut, ChevronDown, LayoutGrid } from 'lucide-svelte';
 	import { fly } from 'svelte/transition';
 
 	let isOpen = $state(false);
@@ -49,8 +49,15 @@
 			</div>
 
 			<div class="p-1">
-				<a 
-					href="/profile" 
+				<a
+					href="/quizzes"
+					onclick={close}
+					class="flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
+				>
+					<LayoutGrid size={16} /> My Quizzes
+				</a>
+				<a
+					href="/profile"
 					onclick={close}
 					class="flex items-center gap-3 px-3 py-2 text-sm text-slate-300 hover:bg-white/5 hover:text-white rounded-lg transition-colors"
 				>

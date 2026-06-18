@@ -1,7 +1,7 @@
 import { env } from '$env/dynamic/public';
 import { userContext } from '$lib/runes/user.svelte';
-import { goto } from '$app/navigation';
-import type { 
+import { authorizedFetch } from './client';
+import type {
     AuthRequest, RegisterRequest, AuthResponseModel, OtpVerifyRequest, 
     OtpConnectDto, OtpDisableRequest, UpdateUserRequest, 
     ChangePasswordRequest, SetPasswordRequest, SendResetPasswordRequest, ResetPasswordRequest,
@@ -11,50 +11,6 @@ import type {
 import type { ApiResponse, ApiError } from '$lib/types/auth';
 
 const SERVICE_URL = `${env.PUBLIC_API_URL}/auth`;
-
-// Общий промис рефреша: параллельные 401-запросы дожидаются ОДНОГО рефреша,
-// а не разлогинивают пользователя, пока рефреш ещё идёт.
-let refreshPromise: Promise<boolean> | null = null;
-
-function refreshSession(headers: Record<string, string>): Promise<boolean> {
-    if (!refreshPromise) {
-        refreshPromise = fetch(`${SERVICE_URL}/refresh`, { method: 'POST', headers })
-            .then((res) => res.ok)
-            .catch(() => false)
-            .finally(() => { refreshPromise = null; });
-    }
-    return refreshPromise;
-}
-
-async function authorizedFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const defaultHeaders = {
-        'Content-Type': 'application/json',
-        'Auth-Strategy': 'cookie'
-    };
-
-    const doFetch = () => fetch(url, {
-        ...options,
-        headers: { ...defaultHeaders, ...options.headers }
-    });
-
-    let response = await doFetch();
-
-    if (response.status === 401) {
-        // Если рефреш уже идёт — дожидаемся его, не запуская второй и не разлогинивая раньше времени
-        const refreshed = await refreshSession(defaultHeaders);
-
-        if (refreshed) {
-            // Повторяем исходный запрос с новыми куками
-            response = await doFetch();
-        } else {
-            userContext.logout();
-            if (typeof window !== 'undefined') goto('/auth');
-            throw new Error('Session expired. Please log in again.');
-        }
-    }
-
-    return response;
-}
 
 export const authService = {
     async login(data: AuthRequest): Promise<{ mfaRequired: boolean }> {
