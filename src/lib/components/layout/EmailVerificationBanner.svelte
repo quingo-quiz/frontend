@@ -1,14 +1,30 @@
 <script lang="ts">
-	import { AlertCircle, Mail, RefreshCw } from 'lucide-svelte';
+	import { AlertCircle, Mail, RefreshCw, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { authService } from '$lib/api/auth';
 	import { securityContext } from '$lib/runes/security.svelte';
 	import { userContext } from '$lib/runes/user.svelte';
 	import { toasts } from '$lib/runes/toast.svelte';
 
+	const DISMISS_KEY = 'quingo:email-banner-dismissed';
+
 	let isSending = $state(false);
+	// Скрыт пользователем на текущую сессию (вернётся после нового входа/перезагрузки вкладки)
+	let dismissed = $state(
+		typeof sessionStorage !== 'undefined' && sessionStorage.getItem(DISMISS_KEY) === '1'
+	);
+
+	function dismiss() {
+		dismissed = true;
+		try {
+			sessionStorage.setItem(DISMISS_KEY, '1');
+		} catch {
+			/* ignore */
+		}
+	}
 
 	let shouldShowBanner = $derived(
+		!dismissed &&
 		userContext.isAuthenticated &&
 		!!securityContext.status &&
 		!securityContext.status.emailVerified
@@ -58,6 +74,14 @@
 					<RefreshCw size={16} />
 					Resend verification email
 				</Button>
+				<button
+					onclick={dismiss}
+					aria-label="Dismiss"
+					title="Hide for now"
+					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-amber-200/70 transition-colors hover:bg-amber-500/15 hover:text-amber-50"
+				>
+					<X size={18} />
+				</button>
 			</div>
 		</div>
 	</section>

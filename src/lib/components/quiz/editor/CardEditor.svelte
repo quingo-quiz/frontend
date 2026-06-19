@@ -4,7 +4,8 @@
 	import { newOptionId, MAX_OPTIONS, MIN_OPTIONS, MIN_TIMER, MAX_TIMER } from '$lib/utils/quiz';
 	import type { Card } from '$lib/types/quiz';
 
-	let { card }: { card: Card } = $props();
+	// $bindable: редактор намеренно мутирует переданную карточку (общий прокси из cards родителя)
+	let { card = $bindable() }: { card: Card } = $props();
 
 	let isChoice = $derived(card.type === 'SINGLE_CHOICE' || card.type === 'MULTIPLE_CHOICE');
 
@@ -85,7 +86,7 @@
 				<span class="text-[10px] text-slate-600">{card.options.length}/{MAX_OPTIONS}</span>
 			</div>
 			{#each card.options as option (option.id)}
-				<div class={cn('group flex items-center gap-3 rounded-xl border p-2 pl-3 transition-colors',
+				<div class={cn('group flex items-center gap-1.5 rounded-xl border p-2 pl-2.5 transition-colors sm:gap-2 sm:pl-3',
 					option.isCorrect ? 'border-green-500/30 bg-green-500/[0.06]' : 'border-white/10 bg-slate-950/40 hover:border-white/20')}>
 					<button
 						type="button"
@@ -106,7 +107,7 @@
 					<input
 						bind:value={option.text}
 						placeholder="Option text"
-						class="flex-1 bg-transparent text-sm text-white placeholder:text-slate-600 focus:outline-none"
+						class="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-slate-600 focus:outline-none"
 					/>
 
 					<button
@@ -115,7 +116,7 @@
 						disabled={card.options.length >= MAX_OPTIONS}
 						aria-label="Duplicate option"
 						title="Duplicate option"
-						class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+						class="shrink-0 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 sm:p-2"
 					>
 						<Copy size={15} />
 					</button>
@@ -125,7 +126,7 @@
 						disabled={card.options.length <= MIN_OPTIONS}
 						aria-label="Remove option"
 						title="Remove option"
-						class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30"
+						class="shrink-0 rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30 sm:p-2"
 					>
 						<Trash2 size={15} />
 					</button>
@@ -149,7 +150,7 @@
 					<input
 						bind:value={card.acceptedTexts[i]}
 						placeholder="Accepted answer"
-						class="flex-1 bg-transparent text-sm text-white placeholder:text-slate-600 focus:outline-none"
+						class="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-slate-600 focus:outline-none"
 					/>
 					<button
 						type="button"

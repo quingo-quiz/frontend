@@ -22,8 +22,8 @@
 	// Генерируем id, если не передан — это нужно для доступности label->input.
 	// $props.id() даёт стабильный id (совпадает на сервере и клиенте — без mismatch при гидратации).
 	const uid = $props.id();
-	let id = propId ?? rest.id ?? `input-${uid}`;
-	let errorId = `${id}-error`;
+	let id = $derived(propId ?? rest.id ?? `input-${uid}`);
+	let errorId = $derived(`${id}-error`);
 </script>
 
 <div class={cn('flex w-full flex-col gap-1.5', className)}>

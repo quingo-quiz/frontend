@@ -42,6 +42,18 @@
 		toasts.show('Live game is coming soon', 'info');
 	}
 
+	// Видимость — свойство всего квиза; для опубликованных меняем прямо из каталога
+	async function handleToggleVisibility(quiz: QuizSummary) {
+		const next = quiz.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
+		try {
+			await quizService.update(quiz.id, { visibility: next });
+			toasts.show(next === 'PUBLIC' ? 'Quiz is now public' : 'Quiz is now private', 'success');
+			quizzes = await quizService.list();
+		} catch (e: any) {
+			toasts.show(e?.message || 'Failed to change visibility', 'error');
+		}
+	}
+
 	// Решаем, что именно удаляем:
 	// - опубликованная карточка → весь квиз;
 	// - карточка-черновик, у которого есть опубликованная версия → только черновик;
@@ -173,7 +185,7 @@
 		<!-- Сетка карточек -->
 		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
 			{#each visibleQuizzes as quiz (quiz.id + '-' + quiz.status)}
-				<QuizCard {quiz} onSelect={openQuiz} onEdit={handleEdit} onDelete={handleDelete} onStart={handleStart} />
+				<QuizCard {quiz} onSelect={openQuiz} onEdit={handleEdit} onDelete={handleDelete} onStart={handleStart} onToggleVisibility={handleToggleVisibility} />
 			{/each}
 		</div>
 	{/if}

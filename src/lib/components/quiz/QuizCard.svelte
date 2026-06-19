@@ -10,9 +10,10 @@
 		onEdit: (quiz: QuizSummary) => void;
 		onDelete: (quiz: QuizSummary) => void;
 		onStart: (quiz: QuizSummary) => void;
+		onToggleVisibility?: (quiz: QuizSummary) => void;
 	}
 
-	let { quiz, onSelect, onEdit, onDelete, onStart }: Props = $props();
+	let { quiz, onSelect, onEdit, onDelete, onStart, onToggleVisibility }: Props = $props();
 
 	// Для пользователя только два состояния: черновик / опубликован (см. isDraft).
 	let draft = $derived(isDraft(quiz.status));
@@ -90,6 +91,11 @@
 					<button onclick={(e) => { e.stopPropagation(); act(onEdit); }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white">
 						<Pencil size={15} /> Edit
 					</button>
+					{#if !draft && onToggleVisibility}
+						<button onclick={(e) => { e.stopPropagation(); act(onToggleVisibility); }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white">
+							{#if isPublic}<Lock size={15} /> Make private{:else}<Globe size={15} /> Make public{/if}
+						</button>
+					{/if}
 					<button onclick={(e) => { e.stopPropagation(); act(onDelete); }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10">
 						<Trash2 size={15} /> Delete
 					</button>
