@@ -23,9 +23,7 @@
 		}
 	});
 
-	let passwordMismatch = $derived(
-		confirmPassword.length > 0 && newPassword !== confirmPassword
-	);
+	let passwordMismatch = $derived(confirmPassword.length > 0 && newPassword !== confirmPassword);
 
 	function validateForm(): boolean {
 		fieldErrors = {};
@@ -59,28 +57,53 @@
 	}
 </script>
 
-<div class="flex min-h-dvh flex-col items-center justify-center p-4 bg-background">
-	<div class="w-full max-w-110 rounded-4xl border border-white/5 bg-surface p-8 sm:p-10 text-center shadow-2xl">
+<div class="flex min-h-dvh flex-col items-center justify-center bg-background p-4">
+	<div
+		class="w-full max-w-110 rounded-4xl border border-white/5 bg-surface p-8 text-center shadow-2xl sm:p-10"
+	>
 		{#if resetSuccess}
-			<div class="py-10 text-center space-y-4">
-				<div class="w-16 h-16 rounded-2xl bg-green-500/10 text-green-500 flex items-center justify-center mx-auto mb-4 border border-green-500/20 shadow-inner">
+			<div class="space-y-4 py-10 text-center">
+				<div
+					class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-green-500/20 bg-green-500/10 text-green-500 shadow-inner"
+				>
 					<CheckCircle2 size={32} />
 				</div>
 				<h2 class="text-2xl font-bold text-white">Password Reset!</h2>
-				<p class="text-slate-500 text-sm max-w-sm mx-auto">
+				<p class="mx-auto max-w-sm text-sm text-slate-500">
 					Your password has been successfully updated. You can now log in with your new password.
 				</p>
-				<Button onclick={() => goto('/auth')} class="mt-8 mx-auto px-8">Go to Sign In</Button>
+				<Button onclick={() => goto('/auth')} class="mx-auto mt-8 px-8">Go to Sign In</Button>
 			</div>
 		{:else}
-			<h2 class="text-2xl font-bold mb-2 text-white">Set New Password</h2>
-			<p class="text-slate-500 text-sm mb-8 font-medium max-w-sm mx-auto">
+			<h2 class="mb-2 text-2xl font-bold text-white">Set New Password</h2>
+			<p class="mx-auto mb-8 max-w-sm text-sm font-medium text-slate-500">
 				Enter your new password below. Make sure it's strong and unique.
 			</p>
 
-			<form class="space-y-6" onsubmit={(e) => { e.preventDefault(); handleResetPassword(); }}>
-				<Input bind:value={newPassword} type="password" label="New Password" placeholder="••••••••" icon={Lock} error={fieldErrors.newPassword} />
-				<Input bind:value={confirmPassword} type="password" label="Confirm New Password" placeholder="••••••••" icon={Lock} error={fieldErrors.confirmPassword || (passwordMismatch ? 'Passwords do not match' : null)} />
+			<form
+				class="space-y-6"
+				onsubmit={(e) => {
+					e.preventDefault();
+					handleResetPassword();
+				}}
+			>
+				<Input
+					bind:value={newPassword}
+					type="password"
+					label="New Password"
+					placeholder="••••••••"
+					icon={Lock}
+					error={fieldErrors.newPassword}
+				/>
+				<Input
+					bind:value={confirmPassword}
+					type="password"
+					label="Confirm New Password"
+					placeholder="••••••••"
+					icon={Lock}
+					error={fieldErrors.confirmPassword ||
+						(passwordMismatch ? 'Passwords do not match' : null)}
+				/>
 				<Button type="submit" class="w-full py-4 text-base" isLoading={loading}>
 					Reset Password
 				</Button>

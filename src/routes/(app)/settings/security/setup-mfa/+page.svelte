@@ -4,7 +4,7 @@
 	import { ArrowLeft, Copy, Check } from 'lucide-svelte';
 	import QRCode from 'qrcode';
 	import { cn } from '$lib/utils/ui';
-	
+
 	import Button from '$lib/components/ui/Button.svelte';
 	import { authService } from '$lib/api/auth';
 	import { toasts } from '$lib/runes/toast.svelte';
@@ -61,7 +61,9 @@
 		try {
 			const url = new URL(secretUri);
 			return url.searchParams.get('secret') || '';
-		} catch { return ''; }
+		} catch {
+			return '';
+		}
 	});
 
 	function handleCopy() {
@@ -92,15 +94,15 @@
 		loading = true;
 		try {
 			await authService.confirmMfaConnect({ code });
-			
+
 			// Обновляем локальное состояние без вызова refreshStatus()
 			// чтобы избежать race condition и повторного initMfaConnect
 			if (securityContext.status) {
 				securityContext.set({ ...securityContext.status, mfaEnabled: true });
 			}
-			
+
 			toasts.show('MFA is now active!', 'success');
-			
+
 			// На settings/security (app)/+layout.svelte будет правильно загружать свежий статус
 			await goBackToSecurity();
 		} catch (err: any) {
@@ -120,19 +122,23 @@
 	}
 </script>
 
-<div class="max-w-md mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
-	<div class="bg-surface border border-white/5 rounded-4xl p-8 shadow-2xl"> <!-- rounded-4xl -->
-		
-		<div class="flex items-center justify-between mb-8">
-			<button onclick={() => goto('/settings/security')} class="p-2 -ml-2 text-slate-500 hover:text-white transition-colors">
+<div class="animate-in fade-in slide-in-from-bottom-4 mx-auto max-w-md pb-12 duration-500">
+	<div class="rounded-4xl border border-white/5 bg-surface p-8 shadow-2xl">
+		<!-- rounded-4xl -->
+
+		<div class="mb-8 flex items-center justify-between">
+			<button
+				onclick={() => goto('/settings/security')}
+				class="-ml-2 p-2 text-slate-500 transition-colors hover:text-white"
+			>
 				<ArrowLeft size={20} />
 			</button>
-			<h2 class="text-sm font-bold text-white uppercase tracking-[0.2em]">Security Step-up</h2>
+			<h2 class="text-sm font-bold tracking-[0.2em] text-white uppercase">Security Step-up</h2>
 			<div class="w-8"></div>
 		</div>
 
 		{#if initializing}
-			<div class="space-y-8 animate-pulse">
+			<div class="animate-pulse space-y-8">
 				<div class="text-center">
 					<div class="mx-auto mb-6 h-44 w-44 rounded-2xl bg-white/5 sm:h-52 sm:w-52"></div>
 					<div class="mx-auto h-5 w-40 rounded-full bg-white/5"></div>
@@ -149,9 +155,9 @@
 					</div>
 				</div>
 
-				<div class="pt-2 border-t border-white/5">
-					<div class="mb-6 h-3 w-44 rounded-full bg-white/5 mx-auto"></div>
-					<div class="grid grid-cols-6 gap-2 sm:gap-3 max-w-[320px] mx-auto">
+				<div class="border-t border-white/5 pt-2">
+					<div class="mx-auto mb-6 h-3 w-44 rounded-full bg-white/5"></div>
+					<div class="mx-auto grid max-w-[320px] grid-cols-6 gap-2 sm:gap-3">
 						{#each Array(6) as _}
 							<div class="aspect-square rounded-xl border border-white/10 bg-white/5"></div>
 						{/each}
@@ -163,33 +169,54 @@
 			<div class="space-y-8">
 				<!-- Step 1: QR Code -->
 				<div class="text-center">
-					<div class="bg-white p-3 rounded-2xl inline-block shadow-2xl shadow-primary/5 mb-6">
-						<img src={qrCodeUrl} alt="QR" class="w-40 h-40 sm:w-48 sm:h-48" />
+					<div class="mb-6 inline-block rounded-2xl bg-white p-3 shadow-2xl shadow-primary/5">
+						<img src={qrCodeUrl} alt="QR" class="h-40 w-40 sm:h-48 sm:w-48" />
 					</div>
-					<h3 class="text-white font-bold text-lg mb-2">Scan with App</h3>
-					<p class="text-slate-500 text-xs px-4">
+					<h3 class="mb-2 text-lg font-bold text-white">Scan with App</h3>
+					<p class="px-4 text-xs text-slate-500">
 						Open your authenticator app and scan this code to link your account.
 					</p>
 				</div>
 
 				<!-- Step 2: Manual Key (Fallback) -->
-				<div class="bg-slate-950/50 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
-					<div class="text-left overflow-hidden mr-4">
-						<p class="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Manual Key</p>
-						<p class="text-xs font-mono text-slate-300 truncate tracking-tight">{rawSecret}</p>
+				<div
+					class="flex items-center justify-between rounded-2xl border border-white/5 bg-slate-950/50 p-4"
+				>
+					<div class="mr-4 overflow-hidden text-left">
+						<p class="mb-1 text-[9px] font-bold tracking-widest text-slate-500 uppercase">
+							Manual Key
+						</p>
+						<p class="truncate font-mono text-xs tracking-tight text-slate-300">{rawSecret}</p>
 					</div>
-					<button onclick={handleCopy} class="p-2.5 rounded-xl bg-white/5 text-slate-400 hover:text-primary hover:bg-white/10 transition-all shrink-0">
-						{#if copied} <Check size={16} /> {:else} <Copy size={16} /> {/if}
+					<button
+						onclick={handleCopy}
+						class="shrink-0 rounded-xl bg-white/5 p-2.5 text-slate-400 transition-all hover:bg-white/10 hover:text-primary"
+					>
+						{#if copied}
+							<Check size={16} />
+						{:else}
+							<Copy size={16} />
+						{/if}
 					</button>
 				</div>
 
 				<!-- Step 3: Verify -->
-				<div class="pt-6 border-t border-white/5">
-					<p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center mb-6">Enter Code from APP</p>
-					
-					<form onsubmit={(e) => { e.preventDefault(); handleConfirm(); }} class="space-y-8">
+				<div class="border-t border-white/5 pt-6">
+					<p
+						class="mb-6 text-center text-[10px] font-bold tracking-[0.2em] text-slate-400 uppercase"
+					>
+						Enter Code from APP
+					</p>
+
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							handleConfirm();
+						}}
+						class="space-y-8"
+					>
 						<div class="flex justify-center">
-							<div class="grid grid-cols-6 gap-2 sm:gap-3 max-w-[320px]">
+							<div class="grid max-w-[320px] grid-cols-6 gap-2 sm:gap-3">
 								{#each digits as digit, i}
 									<input
 										type="text"
@@ -199,17 +226,22 @@
 										oninput={(e) => handleInput(e, i)}
 										onkeydown={(e) => handleKeyDown(e, i)}
 										class={cn(
-											"w-full aspect-square max-w-11 sm:max-w-12 text-center text-xl font-bold rounded-xl border bg-input-bg transition-all focus:outline-none focus:ring-2",
-											hasError 
-												? "border-red-500/50 text-red-500 ring-red-500/10" 
-												: "border-white/10 text-white focus:border-primary/50 focus:ring-primary/20"
+											'aspect-square w-full max-w-11 rounded-xl border bg-input-bg text-center text-xl font-bold transition-all focus:ring-2 focus:outline-none sm:max-w-12',
+											hasError
+												? 'border-red-500/50 text-red-500 ring-red-500/10'
+												: 'border-white/10 text-white focus:border-primary/50 focus:ring-primary/20'
 										)}
 									/>
 								{/each}
 							</div>
 						</div>
 
-						<Button type="submit" class="w-full py-4 text-sm uppercase tracking-widest shadow-lg shadow-primary/10" isLoading={loading} disabled={digits.join('').length < 6}>
+						<Button
+							type="submit"
+							class="w-full py-4 text-sm tracking-widest uppercase shadow-lg shadow-primary/10"
+							isLoading={loading}
+							disabled={digits.join('').length < 6}
+						>
 							Activate
 						</Button>
 					</form>

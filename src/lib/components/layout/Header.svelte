@@ -12,40 +12,50 @@
 	}
 </script>
 
-<header class="h-16 border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-50">
+<header class="sticky top-0 z-50 h-16 border-b border-white/5 bg-background/80 backdrop-blur-md">
 	<!-- Ограничиваем ширину на десктопе и добавляем паддинги -->
-	<div class="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-2 sm:gap-4">
-		
+	<div
+		class="mx-auto flex h-full max-w-7xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8"
+	>
 		<!-- Left: Logo & Title -->
-		<a href="/" class="flex items-center gap-2.5 shrink-0">
-			<img src={icon} alt="Quingo" class="w-7 h-7 sm:w-8 sm:h-8" />
-			<span class="text-xl font-bold italic tracking-tight hidden sm:block">Quingo</span>
+		<a href="/" class="flex shrink-0 items-center gap-2.5">
+			<img src={icon} alt="Quingo" class="h-7 w-7 sm:h-8 sm:w-8" />
+			<span class="hidden text-xl font-bold tracking-tight italic sm:block">Quingo</span>
 		</a>
 
 		<!-- Center: Search (Always visible, flexible) -->
-		<form class="flex-1 max-w-md relative group" onsubmit={(e) => { e.preventDefault(); notifySearchUnavailable(); }}>
-			<Search class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" size={16} />
+		<form
+			class="group relative max-w-md flex-1"
+			onsubmit={(e) => {
+				e.preventDefault();
+				notifySearchUnavailable();
+			}}
+		>
+			<Search
+				class="absolute top-1/2 left-3 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-primary"
+				size={16}
+			/>
 			<input
 				type="text"
 				placeholder="Search..."
 				onfocus={notifySearchUnavailable}
-				class="w-full bg-slate-950/50 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-slate-700"
+				class="w-full rounded-xl border border-white/10 bg-slate-950/50 py-2 pr-4 pl-9 text-sm transition-all placeholder:text-slate-700 focus:border-primary/50 focus:outline-none"
 			/>
 		</form>
 
 		<!-- Right: Actions -->
-		<div class="flex items-center gap-2 shrink-0">
+		<div class="flex shrink-0 items-center gap-2">
 			{#if userContext.isAuthenticated}
-				<button class="p-2 text-slate-500 hover:text-white transition-colors hidden xs:block">
+				<button class="xs:block hidden p-2 text-slate-500 transition-colors hover:text-white">
 					<Bell size={20} />
 				</button>
 				<UserWidget />
 			{:else}
 				<!-- shrink-0 не дает кнопке сжиматься, whitespace-nowrap не дает тексту переноситься -->
-				<Button 
-					variant="primary" 
-					onclick={() => window.location.href = '/auth'} 
-					class="text-[10px] sm:text-xs px-3 sm:px-5 py-2 shrink-0 whitespace-nowrap"
+				<Button
+					variant="primary"
+					onclick={() => (window.location.href = '/auth')}
+					class="shrink-0 px-3 py-2 text-[10px] whitespace-nowrap sm:px-5 sm:text-xs"
 				>
 					Sign In
 				</Button>

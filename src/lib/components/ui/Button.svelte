@@ -34,7 +34,7 @@
 <button
 	{type}
 	disabled={disabled || isLoading}
-	{onclick} 
+	{onclick}
 	class={cn(
 		'relative flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-bold transition-all duration-200 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60',
 		variants[variant],
@@ -46,7 +46,12 @@
 			<Loader2 class="h-5 w-5 animate-spin" />
 		</div>
 	{/if}
-	<span class={cn('flex items-center gap-2 transition-opacity', isLoading ? 'opacity-0' : 'opacity-100')}>
+	<span
+		class={cn(
+			'flex items-center gap-2 transition-opacity',
+			isLoading ? 'opacity-0' : 'opacity-100'
+		)}
+	>
 		{@render children()}
 	</span>
 </button>

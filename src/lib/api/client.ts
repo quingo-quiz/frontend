@@ -11,41 +11,44 @@ const AUTH_BASE = `${env.PUBLIC_API_URL}/auth`;
 let refreshPromise: Promise<boolean> | null = null;
 
 function refreshSession(headers: Record<string, string>): Promise<boolean> {
-    if (!refreshPromise) {
-        refreshPromise = fetch(`${AUTH_BASE}/refresh`, { method: 'POST', headers })
-            .then((res) => res.ok)
-            .catch(() => false)
-            .finally(() => { refreshPromise = null; });
-    }
-    return refreshPromise;
+	if (!refreshPromise) {
+		refreshPromise = fetch(`${AUTH_BASE}/refresh`, { method: 'POST', headers })
+			.then((res) => res.ok)
+			.catch(() => false)
+			.finally(() => {
+				refreshPromise = null;
+			});
+	}
+	return refreshPromise;
 }
 
 export async function authorizedFetch(url: string, options: RequestInit = {}): Promise<Response> {
-    const defaultHeaders = {
-        'Content-Type': 'application/json',
-        'Auth-Strategy': 'cookie'
-    };
+	const defaultHeaders = {
+		'Content-Type': 'application/json',
+		'Auth-Strategy': 'cookie'
+	};
 
-    const doFetch = () => fetch(url, {
-        ...options,
-        headers: { ...defaultHeaders, ...options.headers }
-    });
+	const doFetch = () =>
+		fetch(url, {
+			...options,
+			headers: { ...defaultHeaders, ...options.headers }
+		});
 
-    let response = await doFetch();
+	let response = await doFetch();
 
-    if (response.status === 401) {
-        // Если рефреш уже идёт — дожидаемся его, не запуская второй и не разлогинивая раньше времени
-        const refreshed = await refreshSession(defaultHeaders);
+	if (response.status === 401) {
+		// Если рефреш уже идёт — дожидаемся его, не запуская второй и не разлогинивая раньше времени
+		const refreshed = await refreshSession(defaultHeaders);
 
-        if (refreshed) {
-            // Повторяем исходный запрос с новыми куками
-            response = await doFetch();
-        } else {
-            userContext.logout();
-            if (typeof window !== 'undefined') goto('/auth');
-            throw new Error('Session expired. Please log in again.');
-        }
-    }
+		if (refreshed) {
+			// Повторяем исходный запрос с новыми куками
+			response = await doFetch();
+		} else {
+			userContext.logout();
+			if (typeof window !== 'undefined') goto('/auth');
+			throw new Error('Session expired. Please log in again.');
+		}
+	}
 
-    return response;
+	return response;
 }

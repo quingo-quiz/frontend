@@ -91,7 +91,9 @@
 		aria-modal="true"
 		tabindex="-1"
 		onclick={onClose}
-		onkeydown={(event) => { if (event.key === 'Escape') onClose(); }}
+		onkeydown={(event) => {
+			if (event.key === 'Escape') onClose();
+		}}
 	>
 		<div
 			class="w-full max-w-md rounded-[2.5rem] border border-white/5 bg-surface p-8 shadow-2xl"
@@ -100,7 +102,9 @@
 		>
 			<div class="mb-6 flex items-start justify-between gap-4">
 				<div class="flex items-center gap-3">
-					<div class="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300">
+					<div
+						class="flex h-11 w-11 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/10 text-red-300"
+					>
 						<ShieldOff size={20} />
 					</div>
 					<div>
@@ -121,11 +125,19 @@
 				Enter the current code from your authenticator app to turn off OTP protection.
 			</p>
 
-			<form class="space-y-7" onsubmit={(event) => { event.preventDefault(); handleDisable(); }}>
+			<form
+				class="space-y-7"
+				onsubmit={(event) => {
+					event.preventDefault();
+					handleDisable();
+				}}
+			>
 				<div class="space-y-3">
-					<p class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 text-center">Authenticator code</p>
+					<p class="text-center text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">
+						Authenticator code
+					</p>
 					<div class="flex justify-center">
-						<div class="grid grid-cols-6 gap-2 sm:gap-3 max-w-[320px]">
+						<div class="grid max-w-[320px] grid-cols-6 gap-2 sm:gap-3">
 							{#each codeDigits as digit, index}
 								<input
 									type="text"
@@ -137,7 +149,7 @@
 									onkeydown={(event) => handleKeyDown(event, index)}
 									onpaste={handlePaste}
 									class={cn(
-										"w-full aspect-square max-w-11 sm:max-w-12 text-center text-xl font-bold rounded-xl border bg-input-bg transition-all focus:outline-none focus:ring-2",
+										'aspect-square w-full max-w-11 rounded-xl border bg-input-bg text-center text-xl font-bold transition-all focus:ring-2 focus:outline-none sm:max-w-12',
 										fieldError
 											? 'border-red-500/50 text-red-500 ring-red-500/10'
 											: 'border-white/10 text-white focus:border-primary/50 focus:ring-primary/20'
@@ -147,7 +159,9 @@
 						</div>
 					</div>
 					{#if fieldError}
-						<div class="flex items-center justify-center gap-2 rounded-2xl border border-red-500/10 bg-red-500/5 px-4 py-3 text-sm text-red-300">
+						<div
+							class="flex items-center justify-center gap-2 rounded-2xl border border-red-500/10 bg-red-500/5 px-4 py-3 text-sm text-red-300"
+						>
 							<AlertTriangle size={16} />
 							<span>{fieldError}</span>
 						</div>
@@ -155,10 +169,12 @@
 				</div>
 
 				<div class="grid gap-3 sm:grid-cols-2">
-					<Button type="button" variant="secondary" onclick={onClose} class="w-full">
-						Cancel
-					</Button>
-					<Button type="submit" isLoading={isLoading} class="w-full bg-red-500 text-white hover:bg-red-500/90">
+					<Button type="button" variant="secondary" onclick={onClose} class="w-full">Cancel</Button>
+					<Button
+						type="submit"
+						{isLoading}
+						class="w-full bg-red-500 text-white hover:bg-red-500/90"
+					>
 						Disable OTP
 					</Button>
 				</div>

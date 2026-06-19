@@ -5,9 +5,9 @@
 
 <svelte:head><title>Quingo — Quizzes</title></svelte:head>
 
-<div class="flex min-h-[60vh] flex-col items-center justify-center text-center p-6">
-	<h1 class="text-5xl font-bold mb-4 italic">Quingo</h1>
-	<p class="text-slate-400 mb-8 max-w-md">
+<div class="flex min-h-[60vh] flex-col items-center justify-center p-6 text-center">
+	<h1 class="mb-4 text-5xl font-bold italic">Quingo</h1>
+	<p class="mb-8 max-w-md text-slate-400">
 		{#if userContext.user}
 			С возвращением, {userContext.user.username}! Создавай и проводи свои квизы.
 		{:else}
@@ -15,11 +15,17 @@
 		{/if}
 	</p>
 	{#if userContext.user}
-		<a href="/quizzes" class="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.97]">
+		<a
+			href="/quizzes"
+			class="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.97]"
+		>
 			My Quizzes <ArrowRight size={18} />
 		</a>
 	{:else}
-		<a href="/auth" class="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.97]">
+		<a
+			href="/auth"
+			class="inline-flex items-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary-hover active:scale-[0.97]"
+		>
 			Sign In <ArrowRight size={18} />
 		</a>
 	{/if}

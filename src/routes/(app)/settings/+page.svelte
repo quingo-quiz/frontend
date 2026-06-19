@@ -8,7 +8,7 @@
 	import type { UpdateUserRequest } from '$lib/types/auth';
 
 	let loading = $state(false);
-	
+
 	// Локальное состояние полей, инициализируется из userContext
 	let currentUsername = $state(userContext.user?.username || '');
 	let currentBio = $state(userContext.user?.bio || ''); // Используем поле bio из User модели
@@ -17,9 +17,7 @@
 	let initialBio = userContext.user?.bio || '';
 
 	// Определяем, были ли изменения
-	let hasChanges = $derived(
-		currentUsername !== initialUsername || currentBio !== initialBio
-	);
+	let hasChanges = $derived(currentUsername !== initialUsername || currentBio !== initialBio);
 
 	async function saveChanges() {
 		if (!hasChanges) return;
@@ -32,7 +30,7 @@
 
 			const updatedUser = await authService.updateUserProfile(updateData);
 			userContext.set(updatedUser); // Обновляем глобальный контекст пользователя
-			
+
 			// Обновляем начальные значения, чтобы hasChanges стал false
 			initialUsername = updatedUser.username;
 			initialBio = updatedUser.bio || '';
@@ -49,29 +47,45 @@
 <svelte:head><title>Settings · Quingo</title></svelte:head>
 
 <div class="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500">
-	<div class="relative overflow-hidden rounded-4xl border border-white/5 bg-surface p-6 shadow-2xl sm:p-10">
+	<div
+		class="relative overflow-hidden rounded-4xl border border-white/5 bg-surface p-6 shadow-2xl sm:p-10"
+	>
 		<h3 class="mb-8 text-xl font-bold text-white">Profile Information</h3>
 
 		<div class="mb-10 flex items-center gap-8">
 			<!-- Аватар с наведением -->
-			<div class="group relative h-24 w-24 shrink-0 cursor-pointer overflow-hidden rounded-3xl border-2 border-white/5 transition-all hover:border-primary/50">
-				<div class="flex h-full w-full items-center justify-center bg-primary text-4xl font-bold text-white shadow-xl shadow-primary/20">
+			<div
+				class="group relative h-24 w-24 shrink-0 cursor-pointer overflow-hidden rounded-3xl border-2 border-white/5 transition-all hover:border-primary/50"
+			>
+				<div
+					class="flex h-full w-full items-center justify-center bg-primary text-4xl font-bold text-white shadow-xl shadow-primary/20"
+				>
 					{userContext.user?.username.charAt(0).toUpperCase()}
 				</div>
 				<!-- Overlay -->
-				<div class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
-					<Camera size={20} class="text-white mb-1" />
-					<span class="text-[9px] font-bold uppercase tracking-tighter text-white">Change image</span>
+				<div
+					class="absolute inset-0 flex flex-col items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100"
+				>
+					<Camera size={20} class="mb-1 text-white" />
+					<span class="text-[9px] font-bold tracking-tighter text-white uppercase"
+						>Change image</span
+					>
 				</div>
 			</div>
-			
+
 			<div class="space-y-1">
-				<p class="text-xs font-bold uppercase tracking-widest text-slate-500">Public Name</p>
+				<p class="text-xs font-bold tracking-widest text-slate-500 uppercase">Public Name</p>
 				<h2 class="text-2xl font-bold text-white">{userContext.user?.username}</h2>
 			</div>
 		</div>
 
-		<form class="grid grid-cols-1 gap-6 lg:grid-cols-2" onsubmit={(e) => { e.preventDefault(); saveChanges(); }}>
+		<form
+			class="grid grid-cols-1 gap-6 lg:grid-cols-2"
+			onsubmit={(e) => {
+				e.preventDefault();
+				saveChanges();
+			}}
+		>
 			<Input label="Username" bind:value={currentUsername} placeholder="Username" />
 
 			<Input
@@ -80,10 +94,13 @@
 				locked
 				lockedHint="Email cannot be changed here"
 			/>
-			
+
 			<div class="flex flex-col gap-1.5 lg:col-span-2">
-				<label class="px-1 text-[11px] font-medium uppercase tracking-wider text-slate-500" for="bio">Bio</label>
-				<textarea 
+				<label
+					class="px-1 text-[11px] font-medium tracking-wider text-slate-500 uppercase"
+					for="bio">Bio</label
+				>
+				<textarea
 					id="bio"
 					bind:value={currentBio}
 					placeholder="Tell us about yourself..."
@@ -92,7 +109,12 @@
 			</div>
 
 			<div class="pt-4 lg:col-span-2">
-				<Button type="submit" isLoading={loading} disabled={!hasChanges} class="w-full px-10 sm:w-auto">
+				<Button
+					type="submit"
+					isLoading={loading}
+					disabled={!hasChanges}
+					class="w-full px-10 sm:w-auto"
+				>
 					Save Changes
 				</Button>
 			</div>

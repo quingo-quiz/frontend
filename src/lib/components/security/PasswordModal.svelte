@@ -72,13 +72,14 @@
 				await authService.setPassword({ password: newPassword });
 				toasts.show('Password set successfully!', 'success');
 			}
-			
+
 			// Обновляем глобальный статус безопасности и пользователя
 			await securityContext.refreshStatus();
-            if (userContext.user) { // Обновляем поле passwordSet в userContext
-                userContext.set({ ...userContext.user, passwordSet: true });
-            }
-			
+			if (userContext.user) {
+				// Обновляем поле passwordSet в userContext
+				userContext.set({ ...userContext.user, passwordSet: true });
+			}
+
 			onClose(); // Закрываем модальное окно
 		} catch (e: any) {
 			if (e.fieldErrors) fieldErrors = e.fieldErrors;
@@ -90,17 +91,19 @@
 </script>
 
 {#if isOpen}
-	<div 
+	<div
 		class="fixed inset-0 z-1000 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
 		role="presentation"
 		onclick={(e) => {
 			if (e.target === e.currentTarget) onClose();
 		}}
-		onkeydown={(e) => { if (e.key === 'Escape') onClose(); }}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') onClose();
+		}}
 	>
 		<div
 			transition:fly={{ y: 20, duration: 300 }}
-			class="w-full max-w-md rounded-[2rem] border border-white/5 bg-surface p-6 shadow-2xl mx-auto"
+			class="mx-auto w-full max-w-md rounded-[2rem] border border-white/5 bg-surface p-6 shadow-2xl"
 		>
 			<div class="mb-6 flex items-start justify-between gap-4">
 				<div class="min-w-0">
@@ -108,17 +111,48 @@
 						{#if isPasswordSet}Change password{:else}Set password{/if}
 					</h3>
 				</div>
-				<button onclick={onClose} class="rounded-full p-2 text-slate-500 hover:bg-white/5 hover:text-white transition-colors">
+				<button
+					onclick={onClose}
+					class="rounded-full p-2 text-slate-500 transition-colors hover:bg-white/5 hover:text-white"
+				>
 					<X size={20} />
 				</button>
 			</div>
 
-			<form class="space-y-5" onsubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+			<form
+				class="space-y-5"
+				onsubmit={(e) => {
+					e.preventDefault();
+					handleSubmit();
+				}}
+			>
 				{#if isPasswordSet}
-					<Input bind:value={oldPassword} type="password" label="Current password" placeholder="Enter current password" icon={Lock} error={fieldErrors.oldPassword} />
+					<Input
+						bind:value={oldPassword}
+						type="password"
+						label="Current password"
+						placeholder="Enter current password"
+						icon={Lock}
+						error={fieldErrors.oldPassword}
+					/>
 				{/if}
-				<Input bind:value={newPassword} type="password" label="New password" placeholder="Create a new password" icon={Lock} error={fieldErrors.newPassword} />
-				<Input bind:value={confirmNewPassword} type="password" label="Confirm new password" placeholder="Repeat new password" icon={Lock} error={fieldErrors.confirmNewPassword || (newPasswordMismatch ? 'Passwords do not match' : null)} />
+				<Input
+					bind:value={newPassword}
+					type="password"
+					label="New password"
+					placeholder="Create a new password"
+					icon={Lock}
+					error={fieldErrors.newPassword}
+				/>
+				<Input
+					bind:value={confirmNewPassword}
+					type="password"
+					label="Confirm new password"
+					placeholder="Repeat new password"
+					icon={Lock}
+					error={fieldErrors.confirmNewPassword ||
+						(newPasswordMismatch ? 'Passwords do not match' : null)}
+				/>
 
 				<Button type="submit" isLoading={loading} disabled={loading} class="w-full py-4 text-base">
 					{#if isPasswordSet}Update password{:else}Set password{/if}

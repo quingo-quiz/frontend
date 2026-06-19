@@ -5,17 +5,49 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import {
-		ArrowLeft, ArrowRight, Plus, Globe, Lock, GripVertical, Trash2, Copy, Repeat2, ArrowUp, ArrowDown,
-		MoreVertical, MoreHorizontal, Save, UploadCloud, ListChecks, CheckSquare, Type as TypeIcon, LayoutGrid
+		ArrowLeft,
+		ArrowRight,
+		Plus,
+		Globe,
+		Lock,
+		GripVertical,
+		Trash2,
+		Copy,
+		Repeat2,
+		ArrowUp,
+		ArrowDown,
+		MoreVertical,
+		MoreHorizontal,
+		Save,
+		UploadCloud,
+		ListChecks,
+		CheckSquare,
+		Type as TypeIcon,
+		LayoutGrid
 	} from 'lucide-svelte';
 	import { cn } from '$lib/utils/ui';
-	import { isCardValid, createCard, changeCardType, newId, newOptionId, MAX_CARDS } from '$lib/utils/quiz';
+	import {
+		isCardValid,
+		createCard,
+		changeCardType,
+		newId,
+		newOptionId,
+		MAX_CARDS
+	} from '$lib/utils/quiz';
 	import { toasts } from '$lib/runes/toast.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import CardEditor from '$lib/components/quiz/editor/CardEditor.svelte';
 	import { quizService } from '$lib/api/quiz';
-	import type { Quiz, QuizContent, Card, CardType, CardInput, Visibility, SaveDraftRequest } from '$lib/types/quiz';
+	import type {
+		Quiz,
+		QuizContent,
+		Card,
+		CardType,
+		CardInput,
+		Visibility,
+		SaveDraftRequest
+	} from '$lib/types/quiz';
 
 	let id = $derived(page.params.id ?? '');
 
@@ -95,7 +127,10 @@
 			...c,
 			// Бэкенд (Jackson) для boolean isCorrect может отдавать ключ `correct` —
 			// нормализуем оба варианта, иначе галочки правильных ответов не подсветятся.
-			options: c.options?.map((o) => ({ ...o, isCorrect: o.isCorrect ?? (o as any).correct ?? false })),
+			options: c.options?.map((o) => ({
+				...o,
+				isCorrect: o.isCorrect ?? (o as any).correct ?? false
+			})),
 			acceptedTexts: c.acceptedTexts ? [...c.acceptedTexts] : undefined
 		}));
 	}
@@ -113,12 +148,18 @@
 	// Сборка тела запроса сохранения черновика
 	function toSaveRequest(): SaveDraftRequest {
 		const cardInputs: CardInput[] = cards.map((c) => {
-			const base: CardInput = { type: c.type, questionText: c.questionText, timerSeconds: c.timerSeconds };
+			const base: CardInput = {
+				type: c.type,
+				questionText: c.questionText,
+				timerSeconds: c.timerSeconds
+			};
 			if (c.type === 'TEXT_INPUT') {
 				base.acceptedTexts = [...(c.acceptedTexts ?? [])];
 			} else {
 				// Бэкенд (Jackson) читает boolean как `correct`; шлём оба ключа для надёжности.
-				base.options = (c.options ?? []).map((o) => ({ text: o.text, isCorrect: o.isCorrect, correct: o.isCorrect } as any));
+				base.options = (c.options ?? []).map(
+					(o) => ({ text: o.text, isCorrect: o.isCorrect, correct: o.isCorrect }) as any
+				);
 			}
 			return base;
 		});
@@ -138,7 +179,8 @@
 			baseline = serialize();
 
 			// Восстановление несохранённых правок после случайного обновления страницы
-			const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(storageKey(id)) : null;
+			const stored =
+				typeof localStorage !== 'undefined' ? localStorage.getItem(storageKey(id)) : null;
 			if (stored && stored !== baseline) {
 				try {
 					const data = JSON.parse(stored);
@@ -272,8 +314,16 @@
 			dragIndex = i;
 			selectedId = card.id;
 			openCardMenu = null;
-			try { lpEl?.setPointerCapture(lpPointerId); } catch { /* noop */ }
-			try { navigator.vibrate?.(10); } catch { /* noop */ }
+			try {
+				lpEl?.setPointerCapture(lpPointerId);
+			} catch {
+				/* noop */
+			}
+			try {
+				navigator.vibrate?.(10);
+			} catch {
+				/* noop */
+			}
 		}, 220);
 	}
 
@@ -281,10 +331,13 @@
 		if (e.pointerType !== 'touch') return;
 		if (!touchDragActive) {
 			// Палец поехал до срабатывания long-press → это скролл, отменяем драг
-			if (Math.abs(e.clientX - lpStart.x) > 8 || Math.abs(e.clientY - lpStart.y) > 8) cancelLongPress();
+			if (Math.abs(e.clientX - lpStart.x) > 8 || Math.abs(e.clientY - lpStart.y) > 8)
+				cancelLongPress();
 			return;
 		}
-		const el = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest('[data-card-index]') as HTMLElement | null;
+		const el = (document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null)?.closest(
+			'[data-card-index]'
+		) as HTMLElement | null;
 		if (el) {
 			const overIndex = Number(el.dataset.cardIndex);
 			if (!Number.isNaN(overIndex)) handleDragOver(overIndex);
@@ -305,7 +358,11 @@
 			if (touchDragActive) e.preventDefault();
 		}
 		node.addEventListener('touchmove', onTouchMove, { passive: false });
-		return { destroy() { node.removeEventListener('touchmove', onTouchMove); } };
+		return {
+			destroy() {
+				node.removeEventListener('touchmove', onTouchMove);
+			}
+		};
 	}
 
 	// --- Действия ---
@@ -350,7 +407,11 @@
 			await quizService.saveDraft(id, toSaveRequest());
 			await quizService.publish(id);
 			baseline = serialize();
-			try { localStorage.removeItem(storageKey(id)); } catch { /* noop */ }
+			try {
+				localStorage.removeItem(storageKey(id));
+			} catch {
+				/* noop */
+			}
 			toasts.show('Quiz published', 'success');
 			goto('/quizzes');
 		} catch (e: any) {
@@ -369,7 +430,11 @@
 			if (hasSnapshot) await quizService.discardDraft(id);
 			else await quizService.remove(id);
 			baseline = serialize();
-			try { localStorage.removeItem(storageKey(id)); } catch { /* noop */ }
+			try {
+				localStorage.removeItem(storageKey(id));
+			} catch {
+				/* noop */
+			}
 			toasts.show(hasSnapshot ? 'Draft deleted' : 'Quiz deleted', 'success');
 			goto('/quizzes');
 		} catch (e: any) {
@@ -397,27 +462,67 @@
 	}
 </script>
 
-<svelte:window onclick={() => { showAddMenu = false; showMenu = false; openCardMenu = null; }} />
+<svelte:window
+	onclick={() => {
+		showAddMenu = false;
+		showMenu = false;
+		openCardMenu = null;
+	}}
+/>
 
-<svelte:head><title>{title.trim() ? `${title} · Quingo` : 'Edit Quiz · Quingo'}</title></svelte:head>
+<svelte:head><title>{title.trim() ? `${title} · Quingo` : 'Edit Quiz · Quingo'}</title></svelte:head
+>
 
 <!-- Действия карточки (общие для десктоп-меню и мобильного bottom-sheet).
      horizontal=true → подписи «Move left/right» для горизонтальной ленты на мобилках. -->
 {#snippet cardActions(card: Card, i: number, horizontal: boolean)}
-	<button onclick={(e) => { e.stopPropagation(); moveCard(card.id, -1); }} disabled={i === 0} class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent">
+	<button
+		onclick={(e) => {
+			e.stopPropagation();
+			moveCard(card.id, -1);
+		}}
+		disabled={i === 0}
+		class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+	>
 		{#if horizontal}<ArrowLeft size={15} /> Move left{:else}<ArrowUp size={15} /> Move up{/if}
 	</button>
-	<button onclick={(e) => { e.stopPropagation(); moveCard(card.id, 1); }} disabled={i === cards.length - 1} class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent">
+	<button
+		onclick={(e) => {
+			e.stopPropagation();
+			moveCard(card.id, 1);
+		}}
+		disabled={i === cards.length - 1}
+		class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+	>
 		{#if horizontal}<ArrowRight size={15} /> Move right{:else}<ArrowDown size={15} /> Move down{/if}
 	</button>
 	<div class="my-1 h-px bg-white/5"></div>
-	<button onclick={(e) => { e.stopPropagation(); duplicateCard(card.id); }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white">
+	<button
+		onclick={(e) => {
+			e.stopPropagation();
+			duplicateCard(card.id);
+		}}
+		class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+	>
 		<Copy size={15} /> Duplicate
 	</button>
-	<button onclick={(e) => { e.stopPropagation(); changeTypeCardId = card.id; openCardMenu = null; }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white">
+	<button
+		onclick={(e) => {
+			e.stopPropagation();
+			changeTypeCardId = card.id;
+			openCardMenu = null;
+		}}
+		class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+	>
 		<Repeat2 size={15} /> Change type
 	</button>
-	<button onclick={(e) => { e.stopPropagation(); deleteCard(card.id); }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 transition-colors hover:bg-red-500/10">
+	<button
+		onclick={(e) => {
+			e.stopPropagation();
+			deleteCard(card.id);
+		}}
+		class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-red-400 transition-colors hover:bg-red-500/10"
+	>
 		<Trash2 size={15} /> Delete
 	</button>
 {/snippet}
@@ -431,15 +536,23 @@
 		</div>
 	</div>
 {:else if !quiz}
-	<div class="mx-auto max-w-2xl rounded-4xl border border-dashed border-white/10 bg-surface py-20 text-center text-slate-500">
+	<div
+		class="mx-auto max-w-2xl rounded-4xl border border-dashed border-white/10 bg-surface py-20 text-center text-slate-500"
+	>
 		<p class="text-lg font-bold">{loadError ?? 'Quiz not found'}</p>
-		<button onclick={() => goto('/quizzes')} class="mt-4 text-sm font-bold text-primary hover:underline">Back to My Quizzes</button>
+		<button
+			onclick={() => goto('/quizzes')}
+			class="mt-4 text-sm font-bold text-primary hover:underline">Back to My Quizzes</button
+		>
 	</div>
 {:else}
 	<div class="mx-auto max-w-7xl">
 		<!-- Верхняя панель -->
 		<div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-			<button onclick={() => goto('/quizzes')} class="flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-white">
+			<button
+				onclick={() => goto('/quizzes')}
+				class="flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-white"
+			>
 				<ArrowLeft size={16} /> My Quizzes
 			</button>
 
@@ -451,40 +564,83 @@
 						onclick={handleSave}
 						isLoading={isSaving}
 						disabled={!!saveBlockedReason || isPublishing || !dirty}
-						class={cn('shadow-none', dirty && 'border-green-600 bg-green-600 text-white hover:bg-green-700')}
+						class={cn(
+							'shadow-none',
+							dirty && 'border-green-600 bg-green-600 text-white hover:bg-green-700'
+						)}
 					>
-						<Save size={16} /> {dirty ? 'Save' : 'Saved'}
+						<Save size={16} />
+						{dirty ? 'Save' : 'Saved'}
 					</Button>
 				</div>
 
 				<!-- Publish: неактивна (серая), пока есть ошибки валидации -->
 				<div title={publishError ?? 'Publish — everything looks good'}>
-					<Button variant="secondary" onclick={handlePublish} isLoading={isPublishing} disabled={isSaving || !!publishError} class={cn('px-5', !publishError && 'border-primary bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary-hover')}>
+					<Button
+						variant="secondary"
+						onclick={handlePublish}
+						isLoading={isPublishing}
+						disabled={isSaving || !!publishError}
+						class={cn(
+							'px-5',
+							!publishError &&
+								'border-primary bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary-hover'
+						)}
+					>
 						<UploadCloud size={16} /> Publish
 					</Button>
 				</div>
 
 				<div class="relative">
-					<button onclick={(e) => { e.stopPropagation(); showMenu = !showMenu; }} aria-label="More" class="rounded-xl border border-white/5 bg-surface p-2.5 text-slate-400 transition-colors hover:text-white">
+					<button
+						onclick={(e) => {
+							e.stopPropagation();
+							showMenu = !showMenu;
+						}}
+						aria-label="More"
+						class="rounded-xl border border-white/5 bg-surface p-2.5 text-slate-400 transition-colors hover:text-white"
+					>
 						<MoreVertical size={18} />
 					</button>
 					{#if showMenu}
-						<div class="absolute right-0 z-30 mt-2 w-60 overflow-hidden rounded-xl border border-white/10 bg-surface p-1 shadow-2xl">
+						<div
+							class="absolute right-0 z-30 mt-2 w-60 overflow-hidden rounded-xl border border-white/10 bg-surface p-1 shadow-2xl"
+						>
 							{#if hasSnapshot}
 								<!-- Видимость опубликованного квиза меняется только в каталоге -->
-								<div class="px-3 py-2" title="Visibility affects the whole quiz — change it from My Quizzes">
+								<div
+									class="px-3 py-2"
+									title="Visibility affects the whole quiz — change it from My Quizzes"
+								>
 									<div class="flex items-center gap-3 text-sm text-slate-600">
 										{#if visibility === 'PUBLIC'}<Globe size={15} /> Public{:else}<Lock size={15} /> Private{/if}
 									</div>
-									<p class="mt-0.5 text-[11px] leading-snug text-slate-600">Change visibility from My Quizzes</p>
+									<p class="mt-0.5 text-[11px] leading-snug text-slate-600">
+										Change visibility from My Quizzes
+									</p>
 								</div>
 							{:else}
-								<button onclick={(e) => { e.stopPropagation(); toggleVisibility(); }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white">
-									{#if visibility === 'PUBLIC'}<Lock size={15} /> Make private{:else}<Globe size={15} /> Make public{/if}
+								<button
+									onclick={(e) => {
+										e.stopPropagation();
+										toggleVisibility();
+									}}
+									class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+								>
+									{#if visibility === 'PUBLIC'}<Lock size={15} /> Make private{:else}<Globe
+											size={15}
+										/> Make public{/if}
 								</button>
 							{/if}
-							<button onclick={() => { showMenu = false; showDelete = true; }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10">
-								<Trash2 size={15} /> {hasSnapshot ? 'Delete draft' : 'Delete quiz'}
+							<button
+								onclick={() => {
+									showMenu = false;
+									showDelete = true;
+								}}
+								class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10"
+							>
+								<Trash2 size={15} />
+								{hasSnapshot ? 'Delete draft' : 'Delete quiz'}
 							</button>
 						</div>
 					{/if}
@@ -495,12 +651,21 @@
 		<!-- Заголовок и описание (без рамок) -->
 		<div class="mb-6 border-b border-white/5 pb-6">
 			<div class="mb-4 flex items-center gap-2">
-				<span class={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
-					visibility === 'PUBLIC' ? 'border-sky-400/20 bg-sky-500/10 text-sky-300' : 'border-white/10 bg-white/5 text-slate-400')}>
+				<span
+					class={cn(
+						'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase',
+						visibility === 'PUBLIC'
+							? 'border-sky-400/20 bg-sky-500/10 text-sky-300'
+							: 'border-white/10 bg-white/5 text-slate-400'
+					)}
+				>
 					{#if visibility === 'PUBLIC'}<Globe size={11} /> Public{:else}<Lock size={11} /> Private{/if}
 				</span>
 				{#if hasSnapshot}
-					<span class="inline-flex items-center rounded-full border border-green-500/20 bg-green-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-green-400">Published</span>
+					<span
+						class="inline-flex items-center rounded-full border border-green-500/20 bg-green-500/10 px-2.5 py-1 text-[10px] font-bold tracking-wider text-green-400 uppercase"
+						>Published</span
+					>
 				{/if}
 			</div>
 			<input
@@ -520,10 +685,15 @@
 			<!-- Слайд-панель -->
 			<aside class="lg:w-72 lg:shrink-0">
 				<div class="mb-3 px-1">
-					<span class="text-[11px] font-bold uppercase tracking-widest text-slate-500">Cards · {cards.length}/{MAX_CARDS}</span>
+					<span class="text-[11px] font-bold tracking-widest text-slate-500 uppercase"
+						>Cards · {cards.length}/{MAX_CARDS}</span
+					>
 				</div>
 
-				<div use:dragScrollGuard class="flex gap-3 overflow-x-auto px-1 py-3 lg:flex-col lg:overflow-visible lg:p-0">
+				<div
+					use:dragScrollGuard
+					class="flex gap-3 overflow-x-auto px-1 py-3 lg:flex-col lg:overflow-visible lg:p-0"
+				>
 					{#each cards as card, i (card.id)}
 						{@const valid = isCardValid(card)}
 						{@const Icon = iconFor(card.type)}
@@ -534,8 +704,14 @@
 							data-card-index={i}
 							animate:flip={{ duration: 260, easing: cubicOut }}
 							ondragstart={() => (dragIndex = i)}
-							ondragover={(e) => { e.preventDefault(); handleDragOver(i); }}
-							ondrop={(e) => { e.preventDefault(); endDrag(); }}
+							ondragover={(e) => {
+								e.preventDefault();
+								handleDragOver(i);
+							}}
+							ondrop={(e) => {
+								e.preventDefault();
+								endDrag();
+							}}
 							ondragend={endDrag}
 							onpointerdown={(e) => cardPointerDown(e, card, i)}
 							onpointermove={cardPointerMove}
@@ -544,25 +720,48 @@
 							onclick={() => (selectedId = card.id)}
 							onkeydown={(e) => selectCardKey(e, card.id)}
 							class={cn(
-								'group relative flex w-44 shrink-0 cursor-grab touch-pan-x select-none items-center gap-2 rounded-2xl border bg-surface p-2.5 text-left transition-all active:cursor-grabbing sm:w-60 sm:gap-3 sm:p-3 lg:w-full',
-								selectedId === card.id ? 'border-primary ring-2 ring-primary/40' : 'border-white/5 hover:border-white/15',
+								'group relative flex w-44 shrink-0 cursor-grab touch-pan-x items-center gap-2 rounded-2xl border bg-surface p-2.5 text-left transition-all select-none active:cursor-grabbing sm:w-60 sm:gap-3 sm:p-3 lg:w-full',
+								selectedId === card.id
+									? 'border-primary ring-2 ring-primary/40'
+									: 'border-white/5 hover:border-white/15',
 								dragIndex === i ? 'opacity-50 ring-2 ring-primary/30' : '',
-								touchDragActive && dragIndex === i ? 'z-20 scale-[1.03] shadow-2xl shadow-primary/30' : ''
+								touchDragActive && dragIndex === i
+									? 'z-20 scale-[1.03] shadow-2xl shadow-primary/30'
+									: ''
 							)}
 						>
-							<GripVertical size={15} class="hidden shrink-0 text-slate-600 group-hover:text-slate-400 lg:block" />
-							<span class={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-[11px] font-bold',
-								valid ? 'text-green-400' : 'text-red-400')}>{i + 1}</span>
+							<GripVertical
+								size={15}
+								class="hidden shrink-0 text-slate-600 group-hover:text-slate-400 lg:block"
+							/>
+							<span
+								class={cn(
+									'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-[11px] font-bold',
+									valid ? 'text-green-400' : 'text-red-400'
+								)}>{i + 1}</span
+							>
 							<div class="min-w-0 flex-1">
-								<p class="truncate text-sm font-semibold text-white">{card.questionText || 'Untitled question'}</p>
-								<span class="flex items-center gap-1 text-[10px] text-slate-500"><Icon size={11} /> {card.type === 'SINGLE_CHOICE' ? 'Single' : card.type === 'MULTIPLE_CHOICE' ? 'Multiple' : 'Text'}</span>
+								<p class="truncate text-sm font-semibold text-white">
+									{card.questionText || 'Untitled question'}
+								</p>
+								<span class="flex items-center gap-1 text-[10px] text-slate-500"
+									><Icon size={11} />
+									{card.type === 'SINGLE_CHOICE'
+										? 'Single'
+										: card.type === 'MULTIPLE_CHOICE'
+											? 'Multiple'
+											: 'Text'}</span
+								>
 							</div>
 
 							<!-- Меню действий карточки -->
 							<div class="relative shrink-0">
 								<button
 									onpointerdown={(e) => e.stopPropagation()}
-									onclick={(e) => { e.stopPropagation(); openCardMenu = openCardMenu === card.id ? null : card.id; }}
+									onclick={(e) => {
+										e.stopPropagation();
+										openCardMenu = openCardMenu === card.id ? null : card.id;
+									}}
 									aria-label="Card actions"
 									class="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-white/5 hover:text-white"
 								>
@@ -570,7 +769,9 @@
 								</button>
 								<!-- Десктоп: выпадающее меню (контейнер на lg overflow-visible, не обрезается) -->
 								{#if openCardMenu === card.id}
-									<div class="absolute right-0 z-40 mt-1 hidden w-44 overflow-hidden rounded-xl border border-white/10 bg-surface p-1 shadow-2xl lg:block">
+									<div
+										class="absolute right-0 z-40 mt-1 hidden w-44 overflow-hidden rounded-xl border border-white/10 bg-surface p-1 shadow-2xl lg:block"
+									>
 										{@render cardActions(card, i, false)}
 									</div>
 								{/if}
@@ -579,8 +780,11 @@
 					{/each}
 
 					<button
-						onclick={(e) => { e.stopPropagation(); showAddMenu = true; }}
-						class="flex w-44 shrink-0 items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 py-3 text-xs font-bold uppercase tracking-widest text-slate-500 transition-all hover:border-primary/30 hover:text-primary sm:w-60 lg:w-full"
+						onclick={(e) => {
+							e.stopPropagation();
+							showAddMenu = true;
+						}}
+						class="flex w-44 shrink-0 items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 py-3 text-xs font-bold tracking-widest text-slate-500 uppercase transition-all hover:border-primary/30 hover:text-primary sm:w-60 lg:w-full"
 					>
 						<Plus size={15} /> Add card
 					</button>
@@ -594,16 +798,31 @@
 					<div class="rounded-4xl border border-white/5 bg-surface p-4 shadow-2xl sm:p-8">
 						<div class="mb-5 flex items-center justify-between">
 							<div class="flex items-center gap-3">
-								<span class="text-sm font-bold uppercase tracking-widest text-slate-500">Card {selectedIndex + 1}</span>
-								<span class="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-									<SelIcon size={12} /> {labelFor(selectedCard.type)}
+								<span class="text-sm font-bold tracking-widest text-slate-500 uppercase"
+									>Card {selectedIndex + 1}</span
+								>
+								<span
+									class="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold tracking-wider text-primary uppercase"
+								>
+									<SelIcon size={12} />
+									{labelFor(selectedCard.type)}
 								</span>
 							</div>
 							<div class="flex items-center gap-1">
-								<button onclick={() => duplicateCard(selectedCard.id)} title="Duplicate card" aria-label="Duplicate card" class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/5 hover:text-white">
+								<button
+									onclick={() => duplicateCard(selectedCard.id)}
+									title="Duplicate card"
+									aria-label="Duplicate card"
+									class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/5 hover:text-white"
+								>
 									<Copy size={16} />
 								</button>
-								<button onclick={() => deleteCard(selectedCard.id)} title="Delete card" aria-label="Delete card" class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400">
+								<button
+									onclick={() => deleteCard(selectedCard.id)}
+									title="Delete card"
+									aria-label="Delete card"
+									class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400"
+								>
 									<Trash2 size={16} />
 								</button>
 							</div>
@@ -613,12 +832,18 @@
 						{/key}
 					</div>
 				{:else}
-					<div class="flex flex-col items-center justify-center rounded-4xl border border-dashed border-white/10 bg-surface/50 py-24 text-center">
-						<div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/5 bg-slate-950 text-slate-600">
+					<div
+						class="flex flex-col items-center justify-center rounded-4xl border border-dashed border-white/10 bg-surface/50 py-24 text-center"
+					>
+						<div
+							class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/5 bg-slate-950 text-slate-600"
+						>
 							<LayoutGrid size={28} />
 						</div>
 						<h2 class="text-lg font-bold text-white">No card selected</h2>
-						<p class="mt-1 max-w-xs text-sm text-slate-500">Add a card or pick one from the list to start editing.</p>
+						<p class="mt-1 max-w-xs text-sm text-slate-500">
+							Add a card or pick one from the list to start editing.
+						</p>
 					</div>
 				{/if}
 			</section>
@@ -635,7 +860,9 @@
 			class="fixed inset-0 z-1000 bg-black/50 lg:hidden"
 			role="presentation"
 			onclick={() => (openCardMenu = null)}
-			onkeydown={(e) => { if (e.key === 'Escape') openCardMenu = null; }}
+			onkeydown={(e) => {
+				if (e.key === 'Escape') openCardMenu = null;
+			}}
 		>
 			<div
 				class="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-white/10 bg-surface p-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-2xl"
@@ -643,7 +870,9 @@
 				onclick={(e) => e.stopPropagation()}
 			>
 				<div class="mx-auto my-2 h-1 w-10 rounded-full bg-white/15"></div>
-				<p class="truncate px-3 pb-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">
+				<p
+					class="truncate px-3 pb-1 text-[11px] font-bold tracking-widest text-slate-500 uppercase"
+				>
 					Card {menuIndex + 1} · {menuCard.questionText || 'Untitled'}
 				</p>
 				{@render cardActions(menuCard, menuIndex, true)}
@@ -657,23 +886,36 @@
 	<div
 		class="fixed inset-0 z-1000 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
 		role="presentation"
-		onclick={(e) => { if (e.target === e.currentTarget) showAddMenu = false; }}
-		onkeydown={(e) => { if (e.key === 'Escape') showAddMenu = false; }}
+		onclick={(e) => {
+			if (e.target === e.currentTarget) showAddMenu = false;
+		}}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') showAddMenu = false;
+		}}
 	>
-		<div class="w-full max-w-md rounded-[2rem] border border-white/5 bg-surface p-6 shadow-2xl sm:p-8">
+		<div
+			class="w-full max-w-md rounded-[2rem] border border-white/5 bg-surface p-6 shadow-2xl sm:p-8"
+		>
 			<h3 class="text-xl font-bold text-white">Add a card</h3>
 			<p class="mt-2 text-sm leading-relaxed text-slate-400">Choose the type of question to add.</p>
 			<div class="mt-6 flex flex-col gap-2">
 				{#each cardTypes as t}
 					<button
-						onclick={(e) => { e.stopPropagation(); addCard(t.type); }}
+						onclick={(e) => {
+							e.stopPropagation();
+							addCard(t.type);
+						}}
 						class="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-left text-sm font-bold text-slate-200 transition-all hover:border-primary/40 hover:text-primary"
 					>
-						<t.icon size={18} /> {t.label}
+						<t.icon size={18} />
+						{t.label}
 					</button>
 				{/each}
 			</div>
-			<button onclick={() => (showAddMenu = false)} class="mt-5 w-full rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold uppercase tracking-widest text-slate-200 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white">
+			<button
+				onclick={() => (showAddMenu = false)}
+				class="mt-5 w-full rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold tracking-widest text-slate-200 uppercase transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+			>
 				Cancel
 			</button>
 		</div>
@@ -685,10 +927,16 @@
 	<div
 		class="fixed inset-0 z-1000 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
 		role="presentation"
-		onclick={(e) => { if (e.target === e.currentTarget) changeTypeCardId = null; }}
-		onkeydown={(e) => { if (e.key === 'Escape') changeTypeCardId = null; }}
+		onclick={(e) => {
+			if (e.target === e.currentTarget) changeTypeCardId = null;
+		}}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') changeTypeCardId = null;
+		}}
 	>
-		<div class="w-full max-w-md rounded-[2rem] border border-white/5 bg-surface p-6 shadow-2xl sm:p-8">
+		<div
+			class="w-full max-w-md rounded-[2rem] border border-white/5 bg-surface p-6 shadow-2xl sm:p-8"
+		>
 			<h3 class="text-xl font-bold text-white">Change card type</h3>
 			<p class="mt-2 text-sm leading-relaxed text-amber-400/90">
 				This will reset the card — the question and all answers will be cleared.
@@ -699,15 +947,25 @@
 					<button
 						onclick={() => applyChangeType(t.type)}
 						disabled={current}
-						class={cn('flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-bold transition-all',
-							current ? 'cursor-not-allowed border-white/10 bg-slate-950/40 text-slate-600' : 'border-white/10 bg-slate-950/40 text-slate-200 hover:border-primary/40 hover:text-primary')}
+						class={cn(
+							'flex items-center gap-3 rounded-xl border px-4 py-3 text-left text-sm font-bold transition-all',
+							current
+								? 'cursor-not-allowed border-white/10 bg-slate-950/40 text-slate-600'
+								: 'border-white/10 bg-slate-950/40 text-slate-200 hover:border-primary/40 hover:text-primary'
+						)}
 					>
-						<t.icon size={18} /> {t.label}
-						{#if current}<span class="ml-auto text-[10px] uppercase tracking-widest text-slate-600">current</span>{/if}
+						<t.icon size={18} />
+						{t.label}
+						{#if current}<span class="ml-auto text-[10px] tracking-widest text-slate-600 uppercase"
+								>current</span
+							>{/if}
 					</button>
 				{/each}
 			</div>
-			<button onclick={() => (changeTypeCardId = null)} class="mt-5 w-full rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold uppercase tracking-widest text-slate-200 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white">
+			<button
+				onclick={() => (changeTypeCardId = null)}
+				class="mt-5 w-full rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold tracking-widest text-slate-200 uppercase transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white"
+			>
 				Cancel
 			</button>
 		</div>

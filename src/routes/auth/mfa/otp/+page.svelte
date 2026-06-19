@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { ShieldCheck, ArrowLeft, Timer } from 'lucide-svelte';
 	import { cn } from '$lib/utils/ui';
-	
+
 	import Button from '$lib/components/ui/Button.svelte';
 	import { authService } from '$lib/api/auth';
 	import { toasts } from '$lib/runes/toast.svelte';
@@ -14,10 +14,10 @@
 	let hasError = $state(false);
 	let digits = $state(['', '', '', '', '', '']);
 	let inputRefs = $state<HTMLInputElement[]>([]); // <-- inputRefs теперь реактивен
-	
+
 	let timeLeft = $state(300); // 5 минут в секундах
 	let timerInterval: any;
-    let mfaTempToken = $state<string | null>(null); // Переносим mfaTempToken в стейт
+	let mfaTempToken = $state<string | null>(null); // Переносим mfaTempToken в стейт
 
 	function checkTokenValidity() {
 		mfaTempToken = sessionStorage.getItem('mfa_temp_token');
@@ -78,9 +78,14 @@
 	}
 
 	function handlePaste(e: ClipboardEvent) {
-		const data = e.clipboardData?.getData('text').slice(0, 6).replace(/[^0-9]/g, '');
+		const data = e.clipboardData
+			?.getData('text')
+			.slice(0, 6)
+			.replace(/[^0-9]/g, '');
 		if (data) {
-			data.split('').forEach((char, i) => { if (i < 6) digits[i] = char; });
+			data.split('').forEach((char, i) => {
+				if (i < 6) digits[i] = char;
+			});
 			inputRefs[Math.min(data.length, 5)]?.focus(); // Проверка на null
 		}
 	}
@@ -96,10 +101,10 @@
 		try {
 			// !!! ИСПРАВЛЕНИЕ ЗДЕСЬ !!!
 			await authService.verifyOtp({ code, mfaTempToken }); // Передаем объект OtpVerifyRequest
-			
+
 			const user = await authService.fetchUserInfo();
 			if (user) userContext.set(user);
-			
+
 			sessionStorage.removeItem('mfa_temp_token');
 			sessionStorage.removeItem('mfa_token_timestamp');
 			toasts.show('Welcome back!', 'success');
@@ -114,26 +119,34 @@
 		}
 	}
 
-	const timerDisplay = $derived(`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`);
+	const timerDisplay = $derived(
+		`${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')}`
+	);
 </script>
 
-<div class="flex min-h-dvh flex-col items-center justify-center p-4 bg-background transition-all">
-	<div class="w-full max-w-110 rounded-[2.5rem] border border-white/5 bg-surface p-8 sm:p-12 text-center shadow-2xl">
-		
-		<div class="w-16 h-16 bg-slate-950 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/5 shadow-inner">
+<div class="flex min-h-dvh flex-col items-center justify-center bg-background p-4 transition-all">
+	<div
+		class="w-full max-w-110 rounded-[2.5rem] border border-white/5 bg-surface p-8 text-center shadow-2xl sm:p-12"
+	>
+		<div
+			class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/5 bg-slate-950 shadow-inner"
+		>
 			<ShieldCheck size={32} class="text-primary" />
 		</div>
-		
-		<h2 class="text-2xl font-bold mb-2 text-white">Two-Factor Auth</h2>
-		<p class="text-slate-500 text-sm mb-10 font-medium">
-			Enter code from your 2FA-app
-		</p>
 
-		<form class="space-y-10" onsubmit={(e) => { e.preventDefault(); handleVerify(); }}>
-			
+		<h2 class="mb-2 text-2xl font-bold text-white">Two-Factor Auth</h2>
+		<p class="mb-10 text-sm font-medium text-slate-500">Enter code from your 2FA-app</p>
+
+		<form
+			class="space-y-10"
+			onsubmit={(e) => {
+				e.preventDefault();
+				handleVerify();
+			}}
+		>
 			<div class="space-y-4">
 				<div class="flex justify-center">
-					<div class="grid grid-cols-6 gap-2 sm:gap-3 max-w-[320px]">
+					<div class="grid max-w-[320px] grid-cols-6 gap-2 sm:gap-3">
 						{#each digits as digit, i}
 							<input
 								type="text"
@@ -143,31 +156,41 @@
 								oninput={(e) => handleInput(e, i)}
 								onkeydown={(e) => handleKeyDown(e, i)}
 								class={cn(
-									"w-full aspect-square max-w-[44px] sm:max-w-[48px] text-center text-xl font-bold rounded-xl border bg-input-bg transition-all focus:outline-none focus:ring-2",
-									hasError 
-										? "border-red-500/50 text-red-500 ring-red-500/10" 
-										: "border-white/10 text-white focus:border-primary/50 focus:ring-primary/20"
+									'aspect-square w-full max-w-[44px] rounded-xl border bg-input-bg text-center text-xl font-bold transition-all focus:ring-2 focus:outline-none sm:max-w-[48px]',
+									hasError
+										? 'border-red-500/50 text-red-500 ring-red-500/10'
+										: 'border-white/10 text-white focus:border-primary/50 focus:ring-primary/20'
 								)}
 							/>
 						{/each}
 					</div>
 				</div>
 
-				<div class="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest {timeLeft < 60 ? 'text-red-500' : 'text-slate-600'}">
+				<div
+					class="flex items-center justify-center gap-1.5 text-[10px] font-bold tracking-widest uppercase {timeLeft <
+					60
+						? 'text-red-500'
+						: 'text-slate-600'}"
+				>
 					<Timer size={12} />
 					Time remaining {timerDisplay}
 				</div>
 			</div>
 
 			<div class="space-y-6">
-				<Button type="submit" class="w-full py-4 text-base shadow-lg shadow-primary/20" isLoading={loading} disabled={digits.join('').length < 6}>
+				<Button
+					type="submit"
+					class="w-full py-4 text-base shadow-lg shadow-primary/20"
+					isLoading={loading}
+					disabled={digits.join('').length < 6}
+				>
 					Verify Code
 				</Button>
 
-				<button 
-					type="button" 
+				<button
+					type="button"
 					onclick={() => goto('/auth')}
-					class="flex items-center justify-center gap-2 w-full text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] hover:text-white transition-colors"
+					class="flex w-full items-center justify-center gap-2 text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase transition-colors hover:text-white"
 				>
 					<ArrowLeft size={14} /> Back to Sign In
 				</button>

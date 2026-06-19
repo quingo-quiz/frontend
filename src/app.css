@@ -1,40 +1,40 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-@plugin "@tailwindcss/forms";
-@plugin "@tailwindcss/typography";
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
 
 @theme {
-  /* Цвета фона */
-  --color-background: #0f172a; /* Slate 950 - основной фон */
-  --color-surface: #1e293b;    /* Slate 900 - фон карточки */
-  --color-input-bg: #0f172a;   /* Глубокий темный для инпутов (эффект впадины) */
-  
-  --color-border: #334155;     /* Slate 700 - границы */
-  --color-border-muted: #1e293b; 
+	/* Цвета фона */
+	--color-background: #0f172a; /* Slate 950 - основной фон */
+	--color-surface: #1e293b; /* Slate 900 - фон карточки */
+	--color-input-bg: #0f172a; /* Глубокий темный для инпутов (эффект впадины) */
 
-  /* Текст */
-  --color-foreground: #ffffff;
-  --color-foreground-muted: #94a3b8; /* Slate 400 */
+	--color-border: #334155; /* Slate 700 - границы */
+	--color-border-muted: #1e293b;
 
-  /* Акцент */
-  --color-primary: #f97316;    /* Orange 500 */
-  --color-primary-hover: #ea580c; /* Orange 600 */
-  
-  /* Тени и эффекты */
-  --shadow-primary-glow: 0 4px 20px -5px rgba(249, 115, 22, 0.5);
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
+	/* Текст */
+	--color-foreground: #ffffff;
+	--color-foreground-muted: #94a3b8; /* Slate 400 */
+
+	/* Акцент */
+	--color-primary: #f97316; /* Orange 500 */
+	--color-primary-hover: #ea580c; /* Orange 600 */
+
+	/* Тени и эффекты */
+	--shadow-primary-glow: 0 4px 20px -5px rgba(249, 115, 22, 0.5);
+	--radius-xl: 1rem;
+	--radius-2xl: 1.5rem;
 }
 
 @layer base {
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: 'Inter', system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
+	body {
+		background-color: var(--color-background);
+		color: var(--color-foreground);
+		font-family: 'Inter', system-ui, sans-serif;
+		-webkit-font-smoothing: antialiased;
+	}
 
-  .sveltekit-body {
-    display: contents;
-  }
+	.sveltekit-body {
+		display: contents;
+	}
 }

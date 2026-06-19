@@ -17,83 +17,83 @@ export type CardType = 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TEXT_INPUT';
 // Сервер присваивает целочисленный id; локально (до сохранения) используем
 // временные отрицательные id (см. newOptionId) — они нужны лишь как ключи.
 export interface CardOption {
-    id: number;
-    text: string;
-    isCorrect: boolean;
+	id: number;
+	text: string;
+	isCorrect: boolean;
 }
 
 // Карточка (вопрос)
 export interface Card {
-    id: UUID;
-    position: number; // порядок с 0
-    type: CardType;
-    questionText: string;
-    timerSeconds: number;
-    options?: CardOption[]; // для SINGLE_CHOICE / MULTIPLE_CHOICE
-    acceptedTexts?: string[]; // для TEXT_INPUT
+	id: UUID;
+	position: number; // порядок с 0
+	type: CardType;
+	questionText: string;
+	timerSeconds: number;
+	options?: CardOption[]; // для SINGLE_CHOICE / MULTIPLE_CHOICE
+	acceptedTexts?: string[]; // для TEXT_INPUT
 }
 
 // Содержимое квиза — одинаковая структура у черновика и снапшота
 export interface QuizContent {
-    id: UUID;
-    title: string;
-    description?: string;
-    cards: Card[];
-    modifiedAt?: string; // дата последнего изменения
-    createdAt?: string; // дата создания
+	id: UUID;
+	title: string;
+	description?: string;
+	cards: Card[];
+	modifiedAt?: string; // дата последнего изменения
+	createdAt?: string; // дата создания
 }
 
 // Полный объект квиза (редактор / просмотр)
 export interface Quiz {
-    id: UUID;
-    ownerId: UUID;
-    visibility: Visibility;
-    status: QuizStatus;
-    draft: QuizContent | null; // черновик, виден только владельцу
-    snapshot: QuizContent | null; // опубликованная версия
+	id: UUID;
+	ownerId: UUID;
+	visibility: Visibility;
+	status: QuizStatus;
+	draft: QuizContent | null; // черновик, виден только владельцу
+	snapshot: QuizContent | null; // опубликованная версия
 }
 
 // Лёгкая сводка для списка «Мои квизы».
 // Внимание: один квиз может присутствовать в списке дважды —
 // сводкой черновика (UNPUBLISHED) и опубликованной версии (PUBLISHED) с тем же id.
 export interface QuizSummary {
-    id: UUID;
-    title: string;
-    description?: string;
-    status: QuizStatus;
-    visibility: Visibility;
-    cardCount: number;
-    modifiedAt: string;
-    createdAt: string;
+	id: UUID;
+	title: string;
+	description?: string;
+	status: QuizStatus;
+	visibility: Visibility;
+	cardCount: number;
+	modifiedAt: string;
+	createdAt: string;
 }
 
 // --- Запросы ---
 
 export interface CreateQuizRequest {
-    title: string;
-    description?: string;
-    visibility: Visibility;
+	title: string;
+	description?: string;
+	visibility: Visibility;
 }
 
 // Изменение мета-данных квиза. По контракту — только видимость
 // (title/description меняются через сохранение черновика).
 export interface UpdateQuizRequest {
-    visibility: Visibility;
+	visibility: Visibility;
 }
 
 // Тело карточки при сохранении черновика (без id/position — их назначает сервер,
 // порядок определяется индексом в массиве)
 export interface CardInput {
-    type: CardType;
-    questionText: string;
-    timerSeconds: number;
-    options?: Array<{ text: string; isCorrect: boolean }>; // SINGLE/MULTIPLE
-    acceptedTexts?: string[]; // TEXT_INPUT
+	type: CardType;
+	questionText: string;
+	timerSeconds: number;
+	options?: Array<{ text: string; isCorrect: boolean }>; // SINGLE/MULTIPLE
+	acceptedTexts?: string[]; // TEXT_INPUT
 }
 
 // Полная замена содержимого черновика (мягкая валидация — обязателен только title)
 export interface SaveDraftRequest {
-    title: string;
-    description?: string;
-    cards: CardInput[];
+	title: string;
+	description?: string;
+	cards: CardInput[];
 }

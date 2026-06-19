@@ -16,7 +16,14 @@
 		class?: string;
 	}
 
-	let { children, content, panel, placement = 'top', width = 'w-max max-w-xs', class: cls }: Props = $props();
+	let {
+		children,
+		content,
+		panel,
+		placement = 'top',
+		width = 'w-max max-w-xs',
+		class: cls
+	}: Props = $props();
 
 	let open = $state(false);
 	let wrap = $state<HTMLElement>();
@@ -50,7 +57,10 @@
 		type="button"
 		class="inline-flex cursor-help items-center"
 		aria-label={content}
-		onclick={(e) => { e.stopPropagation(); open = !open; }}
+		onclick={(e) => {
+			e.stopPropagation();
+			open = !open;
+		}}
 	>
 		{@render children()}
 	</button>
@@ -64,7 +74,12 @@
 				placement === 'top' ? 'bottom-full pb-2' : 'top-full pt-2'
 			)}
 		>
-			<span class={cn('block rounded-xl border border-white/10 bg-slate-900 p-3 text-left text-xs leading-relaxed text-slate-200 shadow-2xl', width)}>
+			<span
+				class={cn(
+					'block rounded-xl border border-white/10 bg-slate-900 p-3 text-left text-xs leading-relaxed text-slate-200 shadow-2xl',
+					width
+				)}
+			>
 				{#if panel}{@render panel()}{:else}{content}{/if}
 			</span>
 		</span>

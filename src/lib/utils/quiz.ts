@@ -17,7 +17,9 @@ export const DEFAULT_TIMER = 20;
 
 // id карточки — uuid (как на сервере). Локально временный, сервер переназначит при сохранении.
 export function newId(): string {
-	return globalThis.crypto?.randomUUID?.() ?? `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+	return (
+		globalThis.crypto?.randomUUID?.() ?? `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`
+	);
 }
 
 // Временный id варианта ответа: на сервере это int, локально берём убывающие
@@ -44,7 +46,13 @@ export function createCard(type: CardType, position: number): Card {
 
 // Смена типа карточки: полностью сбрасывает содержимое (id и position сохраняются).
 export function changeCardType(card: Card, type: CardType): Card {
-	const base = { id: card.id, position: card.position, type, questionText: '', timerSeconds: DEFAULT_TIMER };
+	const base = {
+		id: card.id,
+		position: card.position,
+		type,
+		questionText: '',
+		timerSeconds: DEFAULT_TIMER
+	};
 	if (type === 'TEXT_INPUT') {
 		return { ...base, acceptedTexts: [''] };
 	}

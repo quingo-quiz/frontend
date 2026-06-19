@@ -130,7 +130,7 @@
 <div class="mx-auto max-w-7xl">
 	<!-- Шапка раздела -->
 	<div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-		<h1 class="text-3xl font-bold italic text-white">My Quizzes</h1>
+		<h1 class="text-3xl font-bold text-white italic">My Quizzes</h1>
 		<Button onclick={() => (showCreateModal = true)} class="shrink-0">
 			<Plus size={18} /> Create Quiz
 		</Button>
@@ -143,7 +143,9 @@
 				onclick={() => (filter = f.id)}
 				class={cn(
 					'rounded-lg px-4 py-2 text-xs font-bold transition-all',
-					filter === f.id ? 'bg-primary text-white shadow-md shadow-primary/20' : 'text-slate-500 hover:text-slate-300'
+					filter === f.id
+						? 'bg-primary text-white shadow-md shadow-primary/20'
+						: 'text-slate-500 hover:text-slate-300'
 				)}
 			>
 				{f.label}
@@ -167,15 +169,21 @@
 		</div>
 	{:else if visibleQuizzes.length === 0}
 		<!-- Пустое состояние -->
-		<div class="flex flex-col items-center justify-center rounded-4xl border border-dashed border-white/10 bg-surface/50 py-20 text-center">
-			<div class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/5 bg-slate-950 text-slate-600">
+		<div
+			class="flex flex-col items-center justify-center rounded-4xl border border-dashed border-white/10 bg-surface/50 py-20 text-center"
+		>
+			<div
+				class="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/5 bg-slate-950 text-slate-600"
+			>
 				<LayoutGrid size={28} />
 			</div>
 			<h2 class="text-lg font-bold text-white">
 				{filter === 'ALL' ? 'No quizzes yet' : 'Nothing here'}
 			</h2>
 			<p class="mt-1 max-w-xs text-sm text-slate-500">
-				{filter === 'ALL' ? 'Create your first quiz to get started.' : 'Try a different filter or create a new quiz.'}
+				{filter === 'ALL'
+					? 'Create your first quiz to get started.'
+					: 'Try a different filter or create a new quiz.'}
 			</p>
 			<Button onclick={() => (showCreateModal = true)} class="mt-6">
 				<Plus size={18} /> Create Quiz
@@ -185,7 +193,14 @@
 		<!-- Сетка карточек -->
 		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
 			{#each visibleQuizzes as quiz (quiz.id + '-' + quiz.status)}
-				<QuizCard {quiz} onSelect={openQuiz} onEdit={handleEdit} onDelete={handleDelete} onStart={handleStart} onToggleVisibility={handleToggleVisibility} />
+				<QuizCard
+					{quiz}
+					onSelect={openQuiz}
+					onEdit={handleEdit}
+					onDelete={handleDelete}
+					onStart={handleStart}
+					onToggleVisibility={handleToggleVisibility}
+				/>
 			{/each}
 		</div>
 	{/if}

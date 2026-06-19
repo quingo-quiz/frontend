@@ -28,21 +28,24 @@
 
 <div class={cn('flex w-full flex-col gap-1.5', className)}>
 	{#if label}
-		<label class="text-[11px] font-medium uppercase tracking-wider text-slate-500 px-1" for={id}>
+		<label class="px-1 text-[11px] font-medium tracking-wider text-slate-500 uppercase" for={id}>
 			{label}
 		</label>
 	{/if}
 
-	<div class="relative group">
+	<div class="group relative">
 		{#if Icon}
-			<div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500/80 group-focus-within:text-primary transition-colors" aria-hidden="true">
+			<div
+				class="absolute top-1/2 left-4 -translate-y-1/2 text-slate-500/80 transition-colors group-focus-within:text-primary"
+				aria-hidden="true"
+			>
 				<Icon size={18} strokeWidth={2} />
 			</div>
 		{/if}
 
 		<input
 			{...rest}
-			id={id}
+			{id}
 			bind:value
 			disabled={locked || rest.disabled}
 			type={isPassword ? (showPassword ? 'text' : 'password') : type}
@@ -52,16 +55,20 @@
 			aria-describedby={error ? errorId : undefined}
 			class={cn(
 				/* border-white/5 — то самое очень тонкое обрамление */
-				'flex w-full rounded-lg border border-white/10 bg-input-bg py-3 px-4 text-sm text-white placeholder:text-slate-600 transition-all focus:border-primary/40 focus:ring-2 focus:ring-primary/10 focus:outline-none disabled:opacity-50',
+				'flex w-full rounded-lg border border-white/10 bg-input-bg px-4 py-3 text-sm text-white transition-all placeholder:text-slate-600 focus:border-primary/40 focus:ring-2 focus:ring-primary/10 focus:outline-none disabled:opacity-50',
 				Icon && 'pl-12',
 				(isPassword || locked) && 'pr-12',
-				locked && 'cursor-not-allowed border-white/5 bg-slate-950/50 italic text-slate-400',
+				locked && 'cursor-not-allowed border-white/5 bg-slate-950/50 text-slate-400 italic',
 				error && 'border-red-500/40 ring-2 ring-red-500/10'
 			)}
 		/>
 
 		{#if locked}
-			<div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" title={lockedHint}>
+			<div
+				class="absolute top-1/2 right-4 -translate-y-1/2 text-slate-500"
+				aria-hidden="true"
+				title={lockedHint}
+			>
 				<Lock size={16} />
 			</div>
 		{/if}
@@ -71,15 +78,24 @@
 				type="button"
 				onclick={() => (showPassword = !showPassword)}
 				aria-label={showPassword ? 'Hide password' : 'Show password'}
-				class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+				class="absolute top-1/2 right-4 -translate-y-1/2 text-slate-500 transition-colors hover:text-white"
 			>
-				{#if showPassword} <EyeOff size={18} aria-hidden="true" /> {:else} <Eye size={18} aria-hidden="true" /> {/if}
+				{#if showPassword}
+					<EyeOff size={18} aria-hidden="true" />
+				{:else}
+					<Eye size={18} aria-hidden="true" />
+				{/if}
 			</button>
 		{/if}
 	</div>
 
 	{#if error}
-		<div id={errorId} role="alert" aria-live="polite" class="flex items-center gap-1.5 px-1 text-red-400 mt-1">
+		<div
+			id={errorId}
+			role="alert"
+			aria-live="polite"
+			class="mt-1 flex items-center gap-1.5 px-1 text-red-400"
+		>
 			<AlertCircle size={14} aria-hidden="true" />
 			<span class="text-xs font-medium">{error}</span>
 		</div>
