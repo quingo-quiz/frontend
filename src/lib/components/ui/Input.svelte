@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils/ui';
-	import { Eye, EyeOff, AlertCircle } from 'lucide-svelte';
+	import { Eye, EyeOff, AlertCircle, Lock } from 'lucide-svelte';
 
 	let {
 		value = $bindable(),
@@ -9,6 +9,8 @@
 		placeholder = '',
 		error = null,
 		icon: Icon = null,
+		locked = false,
+		lockedHint = 'This field cannot be changed here',
 		class: className = '',
 		id: propId = undefined,
 		...rest
@@ -42,18 +44,27 @@
 			{...rest}
 			id={id}
 			bind:value
+			disabled={locked || rest.disabled}
 			type={isPassword ? (showPassword ? 'text' : 'password') : type}
 			{placeholder}
+			title={locked ? lockedHint : rest.title}
 			aria-invalid={error ? 'true' : 'false'}
 			aria-describedby={error ? errorId : undefined}
 			class={cn(
 				/* border-white/5 — то самое очень тонкое обрамление */
 				'flex w-full rounded-lg border border-white/10 bg-input-bg py-3 px-4 text-sm text-white placeholder:text-slate-600 transition-all focus:border-primary/40 focus:ring-2 focus:ring-primary/10 focus:outline-none disabled:opacity-50',
 				Icon && 'pl-12',
-				isPassword && 'pr-12',
+				(isPassword || locked) && 'pr-12',
+				locked && 'cursor-not-allowed border-white/5 bg-slate-950/50 italic text-slate-400',
 				error && 'border-red-500/40 ring-2 ring-red-500/10'
 			)}
 		/>
+
+		{#if locked}
+			<div class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" title={lockedHint}>
+				<Lock size={16} />
+			</div>
+		{/if}
 
 		{#if isPassword}
 			<button

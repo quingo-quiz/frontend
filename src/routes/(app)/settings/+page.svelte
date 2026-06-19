@@ -46,6 +46,8 @@
 	}
 </script>
 
+<svelte:head><title>Settings · Quingo</title></svelte:head>
+
 <div class="animate-in fade-in slide-in-from-bottom-4 space-y-6 duration-500">
 	<div class="relative overflow-hidden rounded-4xl border border-white/5 bg-surface p-6 shadow-2xl sm:p-10">
 		<h3 class="mb-8 text-xl font-bold text-white">Profile Information</h3>
@@ -71,13 +73,13 @@
 
 		<form class="grid grid-cols-1 gap-6 lg:grid-cols-2" onsubmit={(e) => { e.preventDefault(); saveChanges(); }}>
 			<Input label="Username" bind:value={currentUsername} placeholder="Username" />
-			
-			<div class="flex flex-col gap-1.5">
-				<label class="px-1 text-[11px] font-medium uppercase tracking-wider text-slate-500" for="email">Email Address</label>
-				<div id="email" class="rounded-lg border border-white/5 bg-slate-950/50 p-3 text-sm italic text-slate-400 min-w-0 break-all">
-					{userContext.user?.email}
-				</div>
-			</div>
+
+			<Input
+				label="Email Address"
+				value={userContext.user?.email ?? ''}
+				locked
+				lockedHint="Email cannot be changed here"
+			/>
 			
 			<div class="flex flex-col gap-1.5 lg:col-span-2">
 				<label class="px-1 text-[11px] font-medium uppercase tracking-wider text-slate-500" for="bio">Bio</label>

@@ -116,6 +116,8 @@
 
 </script>
 
+<svelte:head><title>Security · Quingo</title></svelte:head>
+
 <div class="animate-in fade-in slide-in-from-bottom-4 space-y-8 duration-500 pb-20">
 	
 	<!-- Общий лоадер для страницы -->
@@ -220,7 +222,7 @@
 							<Monitor class={securityContext.status.mfaEnabled ? 'text-primary' : 'text-slate-600'} />
 						</div>
 					<div>
-						<p class="text-sm font-bold text-white">Authenticator App)</p>
+						<p class="text-sm font-bold text-white">Authenticator App</p>
 						<p class="text-xs text-slate-500">Use an authenticator app to generate one time passwords</p>
 					</div>
 				</div>

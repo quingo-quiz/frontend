@@ -28,14 +28,10 @@
 		<div transition:fly={{ y: 20, duration: 300 }} class="w-full max-w-lg overflow-hidden rounded-[2rem] border border-white/5 bg-surface shadow-2xl">
 			<!-- Превью -->
 			<div class="relative aspect-video w-full overflow-hidden bg-gradient-to-br from-slate-800 to-slate-950">
-				{#if quiz.previewImageUrl}
-					<img src={quiz.previewImageUrl} alt="" class="h-full w-full object-cover" />
-				{:else}
-					<div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-700">
-						<ImageIcon size={40} strokeWidth={1.5} />
-						<span class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">No preview</span>
-					</div>
-				{/if}
+				<div class="flex h-full w-full flex-col items-center justify-center gap-2 text-slate-700">
+					<ImageIcon size={40} strokeWidth={1.5} />
+					<span class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600">No preview</span>
+				</div>
 
 				<span
 					class={cn(

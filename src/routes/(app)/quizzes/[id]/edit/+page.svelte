@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { flip } from 'svelte/animate';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import {
@@ -7,35 +8,43 @@
 		MoreVertical, MoreHorizontal, Save, UploadCloud, ListChecks, CheckSquare, Type as TypeIcon, LayoutGrid
 	} from 'lucide-svelte';
 	import { cn } from '$lib/utils/ui';
-	import { isCardValid, createCard, changeCardType, newId, MAX_CARDS } from '$lib/utils/quiz';
+	import { isCardValid, createCard, changeCardType, newId, newOptionId, MAX_CARDS } from '$lib/utils/quiz';
 	import { toasts } from '$lib/runes/toast.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import CardEditor from '$lib/components/quiz/editor/CardEditor.svelte';
-	import type { Quiz, Card, CardType, QuizVisibility } from '$lib/types/quiz';
-	// TODO: заменить getMockQuiz на quizService.get(id); Save/Publish — на quizService.*
-	import { getMockQuiz } from '$lib/mocks/quizzes';
+	import { quizService } from '$lib/api/quiz';
+	import type { Quiz, QuizContent, Card, CardType, CardInput, Visibility, SaveDraftRequest } from '$lib/types/quiz';
 
 	let id = $derived(page.params.id ?? '');
 
 	let isLoading = $state(true);
 	let loaded = $state(false);
+	let loadError = $state<string | null>(null);
 	let quiz = $state<Quiz | null>(null);
 
-	// Рабочее состояние черновика (локально в localStorage; на бэкенд — по кнопке Save)
+	// Рабочее состояние черновика (локально; на бэкенд — по кнопке Save)
 	let title = $state('');
 	let description = $state('');
-	let visibility = $state<QuizVisibility>('PRIVATE');
+	let visibility = $state<Visibility>('PRIVATE');
 	let cards = $state<Card[]>([]);
 	let selectedId = $state<string | null>(null);
 	let isSaving = $state(false);
+	let isPublishing = $state(false);
+
+	// Видимость на сервере (чтобы понимать, нужен ли PATCH)
+	let serverVisibility = $state<Visibility>('PRIVATE');
+	// Опубликованный снапшот существует → это правка опубликованного квиза (можно Discard)
+	let hasSnapshot = $derived(!!quiz?.snapshot);
+	// Слепок состояния, синхронизированного с сервером — для определения «есть несохранённые правки»
+	let baseline = $state('');
 
 	let showMenu = $state(false);
 	let showAddMenu = $state(false);
 	let openCardMenu = $state<string | null>(null);
 	let changeTypeCardId = $state<string | null>(null);
-	let showDiscard = $state(false);
 	let showDelete = $state(false);
+	let isDeleting = $state(false);
 
 	let selectedCard = $derived(cards.find((c) => c.id === selectedId) ?? null);
 	let selectedIndex = $derived(cards.findIndex((c) => c.id === selectedId));
@@ -61,48 +70,105 @@
 	function iconFor(type: CardType) {
 		return cardTypes.find((t) => t.type === type)?.icon ?? ListChecks;
 	}
+	function labelFor(type: CardType) {
+		return cardTypes.find((t) => t.type === type)?.label ?? '';
+	}
 	let changeTypeCard = $derived(cards.find((c) => c.id === changeTypeCardId) ?? null);
 
 	const storageKey = (qid: string) => `quingo:draft:${qid}`;
 
-	onMount(async () => {
-		await new Promise((r) => setTimeout(r, 250));
-		const mock = getMockQuiz(id);
-		const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(storageKey(id)) : null;
+	// Сериализация рабочего состояния (порядок ключей фиксирован для сравнения с baseline)
+	function serialize(): string {
+		return JSON.stringify({ title, description, visibility, cards });
+	}
 
-		if (stored) {
-			try {
-				const data = JSON.parse(stored);
-				title = data.title ?? '';
-				description = data.description ?? '';
-				visibility = data.visibility ?? 'PRIVATE';
-				cards = (data.cards ?? []).map((c: Card) => ({ ...c }));
-				quiz = mock ?? { id, visibility, status: 'UNPUBLISHED' };
-			} catch {
-				quiz = mock ?? null;
+	// Есть ли несохранённые правки относительно сервера
+	let dirty = $derived(loaded && serialize() !== baseline);
+
+	// Загрузка содержимого квиза в рабочее состояние (глубокая копия — чтобы не мутировать quiz)
+	function loadContent(content: QuizContent | null, vis: Visibility) {
+		title = content?.title ?? '';
+		description = content?.description ?? '';
+		visibility = vis;
+		cards = (content?.cards ?? []).map((c) => ({
+			...c,
+			// Бэкенд (Jackson) для boolean isCorrect может отдавать ключ `correct` —
+			// нормализуем оба варианта, иначе галочки правильных ответов не подсветятся.
+			options: c.options?.map((o) => ({ ...o, isCorrect: o.isCorrect ?? (o as any).correct ?? false })),
+			acceptedTexts: c.acceptedTexts ? [...c.acceptedTexts] : undefined
+		}));
+	}
+
+	// Принять ответ сервера как новую точку синхронизации
+	function applyServer(q: Quiz) {
+		quiz = q;
+		serverVisibility = q.visibility;
+		const prevIndex = selectedIndex;
+		loadContent(q.draft, q.visibility);
+		baseline = serialize();
+		selectedId = cards[Math.min(Math.max(prevIndex, 0), cards.length - 1)]?.id ?? null;
+	}
+
+	// Сборка тела запроса сохранения черновика
+	function toSaveRequest(): SaveDraftRequest {
+		const cardInputs: CardInput[] = cards.map((c) => {
+			const base: CardInput = { type: c.type, questionText: c.questionText, timerSeconds: c.timerSeconds };
+			if (c.type === 'TEXT_INPUT') {
+				base.acceptedTexts = [...(c.acceptedTexts ?? [])];
+			} else {
+				// Бэкенд (Jackson) читает boolean как `correct`; шлём оба ключа для надёжности.
+				base.options = (c.options ?? []).map((o) => ({ text: o.text, isCorrect: o.isCorrect, correct: o.isCorrect } as any));
 			}
-		} else if (mock) {
-			quiz = mock;
-			const content = mock.draft ?? mock.snapshot;
-			title = content?.title ?? '';
-			description = content?.description ?? '';
-			visibility = mock.visibility;
-			cards = (content?.cards ?? []).map((c) => ({ ...c }));
-		} else {
-			quiz = null;
-		}
+			return base;
+		});
+		return { title: title.trim(), description: description.trim() || undefined, cards: cardInputs };
+	}
 
-		selectedId = cards[0]?.id ?? null;
-		isLoading = false;
-		loaded = true;
+	onMount(async () => {
+		try {
+			let q = await quizService.get(id);
+			// Для редактирования нужен черновик: у опубликованного без черновика создаём копию снапшота
+			if (!q.draft) {
+				q = await quizService.startDraft(id);
+			}
+			quiz = q;
+			serverVisibility = q.visibility;
+			loadContent(q.draft, q.visibility);
+			baseline = serialize();
+
+			// Восстановление несохранённых правок после случайного обновления страницы
+			const stored = typeof localStorage !== 'undefined' ? localStorage.getItem(storageKey(id)) : null;
+			if (stored && stored !== baseline) {
+				try {
+					const data = JSON.parse(stored);
+					title = data.title ?? title;
+					description = data.description ?? description;
+					visibility = data.visibility ?? visibility;
+					cards = (data.cards ?? []).map((c: Card) => ({ ...c }));
+					toasts.show('Restored unsaved changes', 'info');
+				} catch {
+					/* битый кэш — игнорируем */
+				}
+			}
+
+			selectedId = cards[0]?.id ?? null;
+		} catch (e: any) {
+			loadError = e?.message || 'Failed to load quiz';
+			quiz = null;
+		} finally {
+			isLoading = false;
+			loaded = true;
+		}
 	});
 
-	// Автосохранение в localStorage
+	// Кэш в localStorage хранит ТОЛЬКО несохранённые правки (для восстановления).
+	// Совпало с сервером → чистим, чтобы наличие ключа однозначно значило «есть правки».
 	$effect(() => {
 		if (!loaded || !id) return;
-		const snapshot = JSON.stringify({ title, description, visibility, cards });
+		const current = serialize();
 		try {
-			localStorage.setItem(storageKey(id), snapshot);
+			if (current === baseline) localStorage.removeItem(storageKey(id));
+			else localStorage.setItem(storageKey(id), current);
 		} catch {
 			/* ignore quota errors */
 		}
@@ -132,7 +198,7 @@
 		const copy: Card = {
 			...src,
 			id: newId(),
-			options: src.options?.map((o) => ({ ...o, id: newId() })),
+			options: src.options?.map((o) => ({ ...o, id: newOptionId() })),
 			acceptedTexts: src.acceptedTexts ? [...src.acceptedTexts] : undefined
 		};
 		const idx = cards.findIndex((c) => c.id === cardId);
@@ -151,60 +217,99 @@
 		selectedId = cid;
 	}
 
-	// --- Drag & drop ---
+	// --- Drag & drop (живое перемещение: карточки сдвигаются прямо при перетаскивании) ---
 	let dragIndex = $state<number | null>(null);
-	let dragOverIndex = $state<number | null>(null);
 
-	function handleDrop(toIndex: number) {
-		if (dragIndex === null || dragIndex === toIndex) {
-			dragIndex = dragOverIndex = null;
-			return;
-		}
+	function handleDragOver(overIndex: number) {
+		if (dragIndex === null || dragIndex === overIndex) return;
 		const updated = [...cards];
 		const [moved] = updated.splice(dragIndex, 1);
-		updated.splice(toIndex, 0, moved);
+		updated.splice(overIndex, 0, moved);
 		cards = updated.map((c, i) => ({ ...c, position: i }));
-		dragIndex = dragOverIndex = null;
-		// TODO: quizService.reorderCards(id, cards.map((c) => c.id))
+		dragIndex = overIndex; // продолжаем «вести» ту же карточку на новой позиции
+		// Порядок уходит на бэкенд вместе с черновиком при Save (отдельного эндпоинта нет).
+	}
+
+	function endDrag() {
+		dragIndex = null;
 	}
 
 	// --- Действия ---
-	function handleSave() {
+	// Сохранить черновик: при необходимости PATCH видимости + PUT всего содержимого
+	async function handleSave(): Promise<boolean> {
 		if (saveBlockedReason) {
 			toasts.show(saveBlockedReason, 'error');
-			return;
+			return false;
 		}
 		isSaving = true;
-		// TODO: отправка черновика на бэкенд
-		setTimeout(() => {
-			isSaving = false;
+		try {
+			if (visibility !== serverVisibility) {
+				await quizService.update(id, { visibility });
+				serverVisibility = visibility;
+			}
+			const updated = await quizService.saveDraft(id, toSaveRequest());
+			applyServer(updated);
 			toasts.show('Draft saved', 'success');
-		}, 500);
+			return true;
+		} catch (e: any) {
+			toasts.show(e?.message || 'Failed to save draft', 'error');
+			return false;
+		} finally {
+			isSaving = false;
+		}
 	}
 
-	function handlePublish() {
+	// Опубликовать: строгая клиентская валидация → сохраняем актуальный черновик → publish
+	async function handlePublish() {
 		if (publishError) {
 			const badIdx = cards.findIndex((c) => !isCardValid(c));
 			if (badIdx >= 0) selectedId = cards[badIdx].id; // переводим к проблемной карточке
 			toasts.show(publishError, 'error');
 			return;
 		}
-		// TODO: await quizService.publish(id)
-		toasts.show('Quiz published', 'success');
+		isPublishing = true;
+		try {
+			if (visibility !== serverVisibility) {
+				await quizService.update(id, { visibility });
+				serverVisibility = visibility;
+			}
+			await quizService.saveDraft(id, toSaveRequest());
+			await quizService.publish(id);
+			baseline = serialize();
+			try { localStorage.removeItem(storageKey(id)); } catch { /* noop */ }
+			toasts.show('Quiz published', 'success');
+			goto('/quizzes');
+		} catch (e: any) {
+			toasts.show(e?.message || 'Failed to publish quiz', 'error');
+		} finally {
+			isPublishing = false;
+		}
 	}
 
-	function handleDiscard() {
-		showDiscard = false;
-		try { localStorage.removeItem(storageKey(id)); } catch { /* noop */ }
-		toasts.show('Changes discarded', 'info');
-		goto('/quizzes');
+	// В редакторе всегда работаем с черновиком:
+	// у опубликованного квиза Delete выбрасывает только черновик (снапшот остаётся),
+	// у нового (без снапшота) — удаляет квиз целиком.
+	async function handleDelete() {
+		isDeleting = true;
+		try {
+			if (hasSnapshot) await quizService.discardDraft(id);
+			else await quizService.remove(id);
+			baseline = serialize();
+			try { localStorage.removeItem(storageKey(id)); } catch { /* noop */ }
+			toasts.show(hasSnapshot ? 'Draft deleted' : 'Quiz deleted', 'success');
+			goto('/quizzes');
+		} catch (e: any) {
+			toasts.show(e?.message || 'Failed to delete', 'error');
+		} finally {
+			isDeleting = false;
+			showDelete = false;
+		}
 	}
 
-	function handleDelete() {
-		showDelete = false;
-		try { localStorage.removeItem(storageKey(id)); } catch { /* noop */ }
-		toasts.show('Quiz deleted', 'info');
-		goto('/quizzes');
+	// Видимость меняем локально (на бэк уйдёт PATCH'ем при Save)
+	function toggleVisibility() {
+		visibility = visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
+		showMenu = false;
 	}
 
 	function selectCardKey(e: KeyboardEvent, cardId: string) {
@@ -217,6 +322,8 @@
 
 <svelte:window onclick={() => { showAddMenu = false; showMenu = false; openCardMenu = null; }} />
 
+<svelte:head><title>{title.trim() ? `${title} · Quingo` : 'Edit Quiz · Quingo'}</title></svelte:head>
+
 {#if isLoading}
 	<div class="mx-auto max-w-7xl space-y-4">
 		<div class="h-12 w-1/2 animate-pulse rounded-full bg-white/5"></div>
@@ -227,7 +334,7 @@
 	</div>
 {:else if !quiz}
 	<div class="mx-auto max-w-2xl rounded-4xl border border-dashed border-white/10 bg-surface py-20 text-center text-slate-500">
-		<p class="text-lg font-bold">Quiz not found</p>
+		<p class="text-lg font-bold">{loadError ?? 'Quiz not found'}</p>
 		<button onclick={() => goto('/quizzes')} class="mt-4 text-sm font-bold text-primary hover:underline">Back to My Quizzes</button>
 	</div>
 {:else}
@@ -239,31 +346,22 @@
 			</button>
 
 			<div class="flex flex-wrap items-center gap-2">
-				<div class="flex rounded-xl border border-white/5 bg-slate-950/60 p-1">
-					<button
-						onclick={() => (visibility = 'PRIVATE')}
-						class={cn('flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all',
-							visibility === 'PRIVATE' ? 'bg-slate-500/20 text-slate-100' : 'text-slate-500 hover:text-slate-300')}
+				<!-- Save: зелёная при несохранённых правках, серая когда всё сохранено -->
+				<div title={saveBlockedReason ?? (dirty ? 'Save draft' : 'All changes saved')}>
+					<Button
+						variant="secondary"
+						onclick={handleSave}
+						isLoading={isSaving}
+						disabled={!!saveBlockedReason || isPublishing || !dirty}
+						class={cn('shadow-none', dirty && 'border-green-600 bg-green-600 text-white hover:bg-green-700')}
 					>
-						<Lock size={13} /> Private
-					</button>
-					<button
-						onclick={() => (visibility = 'PUBLIC')}
-						class={cn('flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all',
-							visibility === 'PUBLIC' ? 'bg-sky-500/20 text-sky-300' : 'text-slate-500 hover:text-slate-300')}
-					>
-						<Globe size={13} /> Public
-					</button>
-				</div>
-
-				<div title={saveBlockedReason ?? 'Save draft'}>
-					<Button variant="secondary" onclick={handleSave} isLoading={isSaving} disabled={!!saveBlockedReason}>
-						<Save size={16} /> Save
+						<Save size={16} /> {dirty ? 'Save' : 'Saved'}
 					</Button>
 				</div>
 
+				<!-- Publish: неактивна (серая), пока есть ошибки валидации -->
 				<div title={publishError ?? 'Publish — everything looks good'}>
-					<Button onclick={handlePublish} class={cn('px-5', publishError && 'bg-red-600 shadow-red-600/20 hover:bg-red-700')}>
+					<Button variant="secondary" onclick={handlePublish} isLoading={isPublishing} disabled={isSaving || !!publishError} class={cn('px-5', !publishError && 'border-primary bg-primary text-white shadow-lg shadow-primary/20 hover:bg-primary-hover')}>
 						<UploadCloud size={16} /> Publish
 					</Button>
 				</div>
@@ -273,14 +371,12 @@
 						<MoreVertical size={18} />
 					</button>
 					{#if showMenu}
-						<div class="absolute right-0 z-30 mt-2 w-48 overflow-hidden rounded-xl border border-white/10 bg-surface p-1 shadow-2xl">
-							{#if quiz.status === 'PUBLISHED_WITH_DRAFT'}
-								<button onclick={() => { showMenu = false; showDiscard = true; }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white">
-									Discard changes
-								</button>
-							{/if}
+						<div class="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-xl border border-white/10 bg-surface p-1 shadow-2xl">
+							<button onclick={(e) => { e.stopPropagation(); toggleVisibility(); }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/5 hover:text-white">
+								{#if visibility === 'PUBLIC'}<Lock size={15} /> Make private{:else}<Globe size={15} /> Make public{/if}
+							</button>
 							<button onclick={() => { showMenu = false; showDelete = true; }} class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-400 transition-colors hover:bg-red-500/10">
-								<Trash2 size={15} /> Delete quiz
+								<Trash2 size={15} /> {hasSnapshot ? 'Delete draft' : 'Delete quiz'}
 							</button>
 						</div>
 					{/if}
@@ -289,17 +385,26 @@
 		</div>
 
 		<!-- Заголовок и описание (без рамок) -->
-		<div class="mb-6 border-b border-white/5 pb-5">
+		<div class="mb-6 border-b border-white/5 pb-6">
+			<div class="mb-4 flex items-center gap-2">
+				<span class={cn('inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider',
+					visibility === 'PUBLIC' ? 'border-sky-400/20 bg-sky-500/10 text-sky-300' : 'border-white/10 bg-white/5 text-slate-400')}>
+					{#if visibility === 'PUBLIC'}<Globe size={11} /> Public{:else}<Lock size={11} /> Private{/if}
+				</span>
+				{#if hasSnapshot}
+					<span class="inline-flex items-center rounded-full border border-green-500/20 bg-green-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-green-400">Published</span>
+				{/if}
+			</div>
 			<input
 				bind:value={title}
 				placeholder="Untitled quiz"
-				class="w-full bg-transparent text-3xl font-bold tracking-tight text-white placeholder:text-slate-700 focus:outline-none"
+				class="block w-full bg-transparent text-4xl font-bold tracking-tight text-white placeholder:text-slate-700 focus:outline-none"
 			/>
 			<textarea
 				bind:value={description}
-				rows="1"
+				rows="2"
 				placeholder="Add a description…"
-				class="mt-2 w-full resize-none bg-transparent text-sm leading-relaxed text-slate-400 placeholder:text-slate-600 focus:outline-none"
+				class="mt-3 block w-full resize-none bg-transparent text-base leading-relaxed text-slate-400 placeholder:text-slate-600 focus:outline-none"
 			></textarea>
 		</div>
 
@@ -318,22 +423,22 @@
 							role="button"
 							tabindex="0"
 							draggable="true"
+							animate:flip={{ duration: 220 }}
 							ondragstart={() => (dragIndex = i)}
-							ondragover={(e) => { e.preventDefault(); dragOverIndex = i; }}
-							ondrop={() => handleDrop(i)}
-							ondragend={() => { dragIndex = dragOverIndex = null; }}
+							ondragover={(e) => { e.preventDefault(); handleDragOver(i); }}
+							ondrop={(e) => { e.preventDefault(); endDrag(); }}
+							ondragend={endDrag}
 							onclick={() => (selectedId = card.id)}
 							onkeydown={(e) => selectCardKey(e, card.id)}
 							class={cn(
-								'group relative flex w-60 shrink-0 cursor-pointer items-center gap-3 rounded-2xl border p-3 text-left transition-all lg:w-full',
-								selectedId === card.id ? 'border-primary/40 bg-primary/10' : 'border-white/5 bg-surface hover:border-white/15',
-								dragOverIndex === i && dragIndex !== i ? 'ring-2 ring-primary/40' : '',
-								dragIndex === i ? 'opacity-40' : ''
+								'group relative flex w-60 shrink-0 cursor-grab items-center gap-3 rounded-2xl border bg-surface p-3 text-left transition-all active:cursor-grabbing lg:w-full',
+								selectedId === card.id ? 'border-primary ring-2 ring-primary/40' : 'border-white/5 hover:border-white/15',
+								dragIndex === i ? 'opacity-50 ring-2 ring-primary/30' : ''
 							)}
 						>
-							<GripVertical size={15} class="shrink-0 cursor-grab text-slate-600 group-hover:text-slate-400" />
-							<span class={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-bold',
-								valid ? 'bg-slate-950 text-slate-400' : 'bg-red-500/15 text-red-400')}>{i + 1}</span>
+							<GripVertical size={15} class="shrink-0 text-slate-600 group-hover:text-slate-400" />
+							<span class={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-[11px] font-bold',
+								valid ? 'text-green-400' : 'text-red-400')}>{i + 1}</span>
 							<div class="min-w-0 flex-1">
 								<p class="truncate text-sm font-semibold text-white">{card.questionText || 'Untitled question'}</p>
 								<span class="flex items-center gap-1 text-[10px] text-slate-500"><Icon size={11} /> {card.type === 'SINGLE_CHOICE' ? 'Single' : card.type === 'MULTIPLE_CHOICE' ? 'Multiple' : 'Text'}</span>
@@ -388,9 +493,15 @@
 			<!-- Редактор выбранной карточки -->
 			<section class="min-w-0 flex-1">
 				{#if selectedCard}
+					{@const SelIcon = iconFor(selectedCard.type)}
 					<div class="rounded-4xl border border-white/5 bg-surface p-6 shadow-2xl sm:p-8">
 						<div class="mb-5 flex items-center justify-between">
-							<span class="text-sm font-bold uppercase tracking-widest text-slate-500">Card {selectedIndex + 1}</span>
+							<div class="flex items-center gap-3">
+								<span class="text-sm font-bold uppercase tracking-widest text-slate-500">Card {selectedIndex + 1}</span>
+								<span class="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+									<SelIcon size={12} /> {labelFor(selectedCard.type)}
+								</span>
+							</div>
 							<div class="flex items-center gap-1">
 								<button onclick={() => duplicateCard(selectedCard.id)} title="Duplicate card" aria-label="Duplicate card" class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/5 hover:text-white">
 									<Copy size={16} />
@@ -445,7 +556,7 @@
 					</button>
 				{/each}
 			</div>
-			<button onclick={() => (changeTypeCardId = null)} class="mt-5 w-full rounded-xl py-2.5 text-xs font-bold uppercase tracking-widest text-slate-500 transition-colors hover:text-white">
+			<button onclick={() => (changeTypeCardId = null)} class="mt-5 w-full rounded-xl border border-white/10 bg-white/5 py-2.5 text-xs font-bold uppercase tracking-widest text-slate-200 transition-colors hover:border-white/20 hover:bg-white/10 hover:text-white">
 				Cancel
 			</button>
 		</div>
@@ -453,21 +564,14 @@
 {/if}
 
 <ConfirmDialog
-	isOpen={showDiscard}
-	title="Discard changes"
-	message="Your draft edits will be lost and the published version will remain. Continue?"
-	confirmLabel="Discard"
-	destructive={true}
-	onConfirm={handleDiscard}
-	onClose={() => (showDiscard = false)}
-/>
-
-<ConfirmDialog
 	isOpen={showDelete}
-	title="Delete quiz"
-	message="This will permanently delete the quiz. This action cannot be undone."
-	confirmLabel="Delete"
+	title={hasSnapshot ? 'Delete draft' : 'Delete quiz'}
+	message={hasSnapshot
+		? 'Your draft edits will be removed. The published version will stay.'
+		: 'This will permanently delete the quiz. This action cannot be undone.'}
+	confirmLabel={hasSnapshot ? 'Delete draft' : 'Delete'}
 	destructive={true}
+	isLoading={isDeleting}
 	onConfirm={handleDelete}
 	onClose={() => (showDelete = false)}
 />

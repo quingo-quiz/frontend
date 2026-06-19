@@ -8,6 +8,7 @@
     confirmLabel?: string;
     cancelLabel?: string;
     destructive?: boolean;
+    isLoading?: boolean;
     onConfirm?: () => void;
     onClose?: () => void;
   }
@@ -19,6 +20,7 @@
     confirmLabel = 'Confirm',
     cancelLabel = 'Cancel',
     destructive = false,
+    isLoading = false,
     onConfirm = () => {},
     onClose = () => {}
   }: Props = $props();
@@ -31,8 +33,8 @@
       <h3 class="text-lg font-bold text-white mb-2">{title}</h3>
       <p class="text-sm text-slate-400 mb-6">{message}</p>
       <div class="flex justify-end gap-3">
-        <Button variant="ghost" onclick={onClose}>{cancelLabel}</Button>
-        <Button variant="secondary" onclick={() => { onConfirm(); }} class={destructive ? 'bg-red-600 text-white hover:bg-red-700 border-red-600' : ''}>
+        <Button variant="ghost" onclick={onClose} disabled={isLoading}>{cancelLabel}</Button>
+        <Button variant="secondary" isLoading={isLoading} onclick={() => { onConfirm(); }} class={destructive ? 'bg-red-600 text-white hover:bg-red-700 border-red-600' : ''}>
           {confirmLabel}
         </Button>
       </div>

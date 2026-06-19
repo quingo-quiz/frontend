@@ -1,21 +1,14 @@
 <script lang="ts">
-	import { Trash2, Plus, ListChecks, CheckSquare, Type as TypeIcon, Clock } from 'lucide-svelte';
+	import { Trash2, Plus, Copy, Clock, Check } from 'lucide-svelte';
 	import { cn } from '$lib/utils/ui';
-	import { newId, MAX_OPTIONS, MIN_OPTIONS, MIN_TIMER, MAX_TIMER } from '$lib/utils/quiz';
-	import type { Card, CardType } from '$lib/types/quiz';
+	import { newOptionId, MAX_OPTIONS, MIN_OPTIONS, MIN_TIMER, MAX_TIMER } from '$lib/utils/quiz';
+	import type { Card } from '$lib/types/quiz';
 
 	let { card }: { card: Card } = $props();
 
-	const typeMeta: Record<CardType, { label: string; icon: typeof ListChecks }> = {
-		SINGLE_CHOICE: { label: 'Single choice', icon: ListChecks },
-		MULTIPLE_CHOICE: { label: 'Multiple choice', icon: CheckSquare },
-		TEXT_INPUT: { label: 'Text input', icon: TypeIcon }
-	};
-
 	let isChoice = $derived(card.type === 'SINGLE_CHOICE' || card.type === 'MULTIPLE_CHOICE');
-	let TypeBadgeIcon = $derived(typeMeta[card.type].icon);
 
-	function toggleCorrect(optId: string) {
+	function toggleCorrect(optId: number) {
 		if (!card.options) return;
 		if (card.type === 'SINGLE_CHOICE') {
 			card.options = card.options.map((o) => ({ ...o, isCorrect: o.id === optId }));
@@ -26,11 +19,20 @@
 
 	function addOption() {
 		if ((card.options?.length ?? 0) >= MAX_OPTIONS) return;
-		card.options = [...(card.options ?? []), { id: newId(), text: '', isCorrect: false }];
+		card.options = [...(card.options ?? []), { id: newOptionId(), text: '', isCorrect: false }];
 	}
-	function removeOption(optId: string) {
+	function removeOption(optId: number) {
 		if (!card.options || card.options.length <= MIN_OPTIONS) return;
 		card.options = card.options.filter((o) => o.id !== optId);
+	}
+	function duplicateOption(optId: number) {
+		if (!card.options || card.options.length >= MAX_OPTIONS) return;
+		const idx = card.options.findIndex((o) => o.id === optId);
+		if (idx < 0) return;
+		const copy = { ...card.options[idx], id: newOptionId() };
+		const next = [...card.options];
+		next.splice(idx + 1, 0, copy);
+		card.options = next;
 	}
 
 	function addAnswer() {
@@ -49,37 +51,29 @@
 </script>
 
 <div class="flex flex-col gap-6">
-	<!-- Тип (только метка) + таймер -->
-	<div class="flex items-center justify-between gap-4">
-		<span class="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-slate-950/40 px-3 py-1.5 text-xs font-bold text-slate-300">
-			<TypeBadgeIcon size={15} class="text-primary" /> {typeMeta[card.type].label}
-		</span>
-
-		<div class="flex items-center gap-2">
-			<span class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Timer</span>
-			<div class="relative w-28">
-				<Clock size={15} class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-				<input
-					type="number"
-					min={MIN_TIMER}
-					max={MAX_TIMER}
-					bind:value={card.timerSeconds}
-					onblur={clampTimer}
-					class="w-full rounded-lg border border-white/10 bg-input-bg py-2 pl-9 pr-3 text-sm text-white transition-all focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10"
-				/>
-			</div>
+	<!-- Таймер -->
+	<div class="flex justify-end">
+		<div class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/40 px-3 py-1.5">
+			<Clock size={15} class="text-slate-500" />
+			<input
+				type="number"
+				min={MIN_TIMER}
+				max={MAX_TIMER}
+				bind:value={card.timerSeconds}
+				onblur={clampTimer}
+				class="no-spin w-12 bg-transparent text-center text-sm font-semibold text-white focus:outline-none"
+			/>
+			<span class="text-xs font-medium text-slate-500">sec</span>
 		</div>
 	</div>
 
-	<!-- Вопрос -->
-	<div class="flex flex-col gap-1.5">
-		<span class="px-1 text-[11px] font-medium uppercase tracking-wider text-slate-500">Question</span>
-		<textarea
-			bind:value={card.questionText}
-			placeholder="Type your question here..."
-			class="min-h-24 w-full resize-none rounded-xl border border-white/10 bg-input-bg p-4 text-base text-white placeholder:text-slate-600 transition-all focus:border-primary/40 focus:outline-none focus:ring-2 focus:ring-primary/10"
-		></textarea>
-	</div>
+	<!-- Вопрос: крупное поле без рамки -->
+	<textarea
+		bind:value={card.questionText}
+		rows="2"
+		placeholder="Type your question…"
+		class="w-full resize-none border-b border-white/10 bg-transparent pb-2 text-2xl font-bold text-white placeholder:text-slate-700 transition-colors focus:border-primary/50 focus:outline-none"
+	></textarea>
 
 	<!-- Данные по типу -->
 	{#if isChoice && card.options}
@@ -91,20 +85,22 @@
 				<span class="text-[10px] text-slate-600">{card.options.length}/{MAX_OPTIONS}</span>
 			</div>
 			{#each card.options as option (option.id)}
-				<div class="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/40 p-2 pl-3">
+				<div class={cn('group flex items-center gap-3 rounded-xl border p-2 pl-3 transition-colors',
+					option.isCorrect ? 'border-green-500/30 bg-green-500/[0.06]' : 'border-white/10 bg-slate-950/40 hover:border-white/20')}>
 					<button
 						type="button"
 						onclick={() => toggleCorrect(option.id)}
 						aria-label="Mark correct"
+						title={option.isCorrect ? 'Correct answer' : 'Mark as correct'}
 						class={cn(
 							'flex h-7 w-7 shrink-0 items-center justify-center border-2 transition-all',
 							card.type === 'SINGLE_CHOICE' ? 'rounded-full' : 'rounded-md',
 							option.isCorrect
-								? 'border-green-500 bg-green-500/20 text-green-400'
-								: 'border-slate-600 text-transparent hover:border-slate-400'
+								? 'border-green-500 bg-green-500 text-white'
+								: 'border-slate-500 text-transparent hover:border-slate-300'
 						)}
 					>
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="h-4 w-4"><path d="M20 6 9 17l-5-5" /></svg>
+						<Check size={16} strokeWidth={3.5} />
 					</button>
 
 					<input
@@ -115,12 +111,23 @@
 
 					<button
 						type="button"
+						onclick={() => duplicateOption(option.id)}
+						disabled={card.options.length >= MAX_OPTIONS}
+						aria-label="Duplicate option"
+						title="Duplicate option"
+						class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/5 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+					>
+						<Copy size={15} />
+					</button>
+					<button
+						type="button"
 						onclick={() => removeOption(option.id)}
 						disabled={card.options.length <= MIN_OPTIONS}
 						aria-label="Remove option"
+						title="Remove option"
 						class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30"
 					>
-						<Trash2 size={16} />
+						<Trash2 size={15} />
 					</button>
 				</div>
 			{/each}
@@ -138,7 +145,7 @@
 		<div class="flex flex-col gap-2">
 			<span class="px-1 text-[11px] font-medium uppercase tracking-wider text-slate-500">Accepted answers</span>
 			{#each card.acceptedTexts as _, i (i)}
-				<div class="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/40 p-2 pl-4">
+				<div class="group flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/40 p-2 pl-4 transition-colors hover:border-white/20">
 					<input
 						bind:value={card.acceptedTexts[i]}
 						placeholder="Accepted answer"
@@ -149,9 +156,10 @@
 						onclick={() => removeAnswer(i)}
 						disabled={card.acceptedTexts.length <= 1}
 						aria-label="Remove answer"
+						title="Remove answer"
 						class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-30"
 					>
-						<Trash2 size={16} />
+						<Trash2 size={15} />
 					</button>
 				</div>
 			{/each}
@@ -166,3 +174,16 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+	/* Прячем дефолтные стрелки у number-инпута таймера */
+	.no-spin::-webkit-outer-spin-button,
+	.no-spin::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+	.no-spin {
+		-moz-appearance: textfield;
+		appearance: textfield;
+	}
+</style>

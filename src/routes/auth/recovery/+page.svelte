@@ -1,15 +1,22 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Input from '$lib/components/ui/Input.svelte';
-	import { Mail, ChevronLeft, Send } from 'lucide-svelte';
+	import { Mail, ChevronLeft } from 'lucide-svelte';
 	import { toasts } from '$lib/runes/toast.svelte';
 	import { authService } from '$lib/api/auth';
 	import { goto } from '$app/navigation';
+	import favicon from '$lib/assets/favicon.svg';
 
 	let email = $state('');
 	let loading = $state(false);
 	let emailSent = $state(false);
 	let fieldErrors = $state<Record<string, string>>({});
+
+	// Подставляем email, введённый ранее на форме входа/регистрации
+	onMount(() => {
+		email = localStorage.getItem('auth_email') || '';
+	});
 
 	async function handleSendResetLink() {
 		fieldErrors = {}; // Clear previous errors
@@ -32,7 +39,13 @@
 	}
 </script>
 
+<svelte:head><title>Password Recovery · Quingo</title></svelte:head>
+
 <div class="flex min-h-dvh flex-col items-center justify-center p-4 bg-background"> <!-- min-h-dvh -->
+	<a href="/auth" class="mb-8 flex items-center gap-2.5">
+		<img src={favicon} alt="Quingo" class="h-8 w-8" />
+		<span class="text-2xl font-bold italic tracking-tight text-white">Quingo</span>
+	</a>
 	<div class="w-full max-w-110 rounded-4xl border border-white/5 bg-surface p-8 sm:p-10 text-center shadow-2xl"> <!-- max-w-110, rounded-4xl -->
 		<a href="/auth" class="flex items-center gap-2 text-slate-500 hover:text-white transition-colors mb-8 text-sm font-medium w-fit mx-auto">
 			<ChevronLeft size={16} /> Back to Sign In

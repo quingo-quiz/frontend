@@ -1,11 +1,10 @@
 // src/lib/api/quiz.ts
-// Клиент main-service для работы с квизами. Контракт см. в quiz-api-contract.md.
-// ВНИМАНИЕ: main-service ещё проектируется — пока страницы используют моки (см. $lib/mocks/quizzes).
+// Клиент main-service для работы с квизами. Контракт см. в openapi-main.yaml / quiz-api-contract.md.
 import { env } from '$env/dynamic/public';
 import { authorizedFetch } from './client';
 import type { ApiResponse, ApiError } from '$lib/types/auth';
 import type {
-    Quiz, QuizSummary, QuizContent,
+    Quiz, QuizSummary,
     CreateQuizRequest, UpdateQuizRequest, SaveDraftRequest, UUID
 } from '$lib/types/quiz';
 
@@ -48,10 +47,10 @@ export const quizService = {
         if (!res.ok) throw await res.json() as ApiError;
     },
 
-    // 3.6 Начать редактирование опубликованного (черновик-копия снапшота)
-    async startDraft(id: UUID): Promise<QuizContent> {
+    // 3.6 Начать редактирование опубликованного (создаёт черновик-копию снапшота)
+    async startDraft(id: UUID): Promise<Quiz> {
         const res = await authorizedFetch(`${SERVICE_URL}/${id}/draft`, { method: 'POST' });
-        return unwrap<QuizContent>(res);
+        return unwrap<Quiz>(res);
     },
 
     // 3.7 Сохранить черновик целиком (Save): полная замена содержимого

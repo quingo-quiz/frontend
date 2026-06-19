@@ -30,6 +30,8 @@
 	}
 </script>
 
+<svelte:head><title>Profile · Quingo</title></svelte:head>
+
 {#if userContext.isLoading || securityContext.isLoading}
 	<div class="flex justify-center py-20">
 		<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -56,6 +58,11 @@
 					<p class="text-slate-400 flex items-center justify-center md:justify-start gap-2 text-sm">
 						<Mail size={16} /> {userContext.user.email}
 					</p>
+					{#if userContext.user.bio}
+						<p class="text-sm leading-relaxed text-slate-400 max-w-xl">{userContext.user.bio}</p>
+					{:else}
+						<p class="text-sm italic text-slate-600">No bio yet. Add one in <a href="/settings" class="text-primary hover:underline">Settings</a>.</p>
+					{/if}
 				</div>
 
 				<a href="/settings" class="px-6 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl font-bold transition-all text-xs border border-white/10 uppercase tracking-wider">

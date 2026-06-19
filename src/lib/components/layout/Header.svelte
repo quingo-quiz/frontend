@@ -3,7 +3,13 @@
 	import UserWidget from './UserWidget.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { Search, Bell } from 'lucide-svelte';
+	import { toasts } from '$lib/runes/toast.svelte';
 	import icon from '$lib/assets/favicon.svg';
+
+	// Поиск ещё не реализован — мягко сообщаем пользователю (один тост на фокус)
+	function notifySearchUnavailable() {
+		toasts.show('Search is temporarily unavailable', 'info');
+	}
 </script>
 
 <header class="h-16 border-b border-white/5 bg-background/80 backdrop-blur-md sticky top-0 z-50">
@@ -17,14 +23,15 @@
 		</a>
 
 		<!-- Center: Search (Always visible, flexible) -->
-		<div class="flex-1 max-w-md relative group">
+		<form class="flex-1 max-w-md relative group" onsubmit={(e) => { e.preventDefault(); notifySearchUnavailable(); }}>
 			<Search class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-primary transition-colors" size={16} />
-			<input 
-				type="text" 
-				placeholder="Search..." 
+			<input
+				type="text"
+				placeholder="Search..."
+				onfocus={notifySearchUnavailable}
 				class="w-full bg-slate-950/50 border border-white/10 rounded-xl py-2 pl-9 pr-4 text-sm focus:outline-none focus:border-primary/50 transition-all placeholder:text-slate-700"
 			/>
-		</div>
+		</form>
 
 		<!-- Right: Actions -->
 		<div class="flex items-center gap-2 shrink-0">

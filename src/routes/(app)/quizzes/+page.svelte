@@ -6,18 +6,24 @@
 	import QuizCard from '$lib/components/quiz/QuizCard.svelte';
 	import NewQuizModal from '$lib/components/quiz/NewQuizModal.svelte';
 	import QuizPreviewModal from '$lib/components/quiz/QuizPreviewModal.svelte';
+	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import { toasts } from '$lib/runes/toast.svelte';
 	import { cn } from '$lib/utils/ui';
 	import { isDraft } from '$lib/utils/quiz';
+	import { quizService } from '$lib/api/quiz';
 	import type { QuizSummary, QuizStatus, CreateQuizRequest } from '$lib/types/quiz';
-	// TODO: заменить mock на quizService.list(), когда main-service будет готов
-	import { mockQuizzes } from '$lib/mocks/quizzes';
 
 	let quizzes = $state<QuizSummary[]>([]);
 	let isLoading = $state(true);
+	let loadError = $state<string | null>(null);
 	let showCreateModal = $state(false);
 	let isCreating = $state(false);
 	let previewQuiz = $state<QuizSummary | null>(null);
+
+	// Удаление: 'draft' = выбросить черновик (у опубликованного), 'quiz' = удалить весь квиз
+	let deleteTarget = $state<QuizSummary | null>(null);
+	let deleteMode = $state<'draft' | 'quiz'>('quiz');
+	let isDeleting = $state(false);
 
 	// Черновик открываем сразу в редакторе, опубликованный — через окно предпросмотра
 	function openQuiz(quiz: QuizSummary) {
@@ -25,6 +31,41 @@
 			goto(`/quizzes/${quiz.id}/edit`);
 		} else {
 			previewQuiz = quiz;
+		}
+	}
+
+	function handleEdit(quiz: QuizSummary) {
+		goto(`/quizzes/${quiz.id}/edit`);
+	}
+
+	function handleStart(_quiz: QuizSummary) {
+		toasts.show('Live game is coming soon', 'info');
+	}
+
+	// Решаем, что именно удаляем:
+	// - опубликованная карточка → весь квиз;
+	// - карточка-черновик, у которого есть опубликованная версия → только черновик;
+	// - черновик без опубликованной версии → весь квиз.
+	function handleDelete(quiz: QuizSummary) {
+		const hasPublishedTwin = quizzes.some((q) => q.id === quiz.id && q.status === 'PUBLISHED');
+		deleteMode = isDraft(quiz.status) && hasPublishedTwin ? 'draft' : 'quiz';
+		deleteTarget = quiz;
+	}
+
+	async function confirmDelete() {
+		if (!deleteTarget) return;
+		const target = deleteTarget;
+		isDeleting = true;
+		try {
+			if (deleteMode === 'draft') await quizService.discardDraft(target.id);
+			else await quizService.remove(target.id);
+			toasts.show(deleteMode === 'draft' ? 'Draft deleted' : 'Quiz deleted', 'success');
+			deleteTarget = null;
+			quizzes = await quizService.list();
+		} catch (e: any) {
+			toasts.show(e?.message || 'Failed to delete', 'error');
+		} finally {
+			isDeleting = false;
 		}
 	}
 
@@ -46,37 +87,38 @@
 	let visibleQuizzes = $derived(quizzes.filter((q) => matchesFilter(q.status, filter)));
 
 	onMount(async () => {
-		// Имитация загрузки (mock). Реальный вызов: quizzes = await quizService.list();
-		await new Promise((r) => setTimeout(r, 400));
-		quizzes = mockQuizzes;
-		isLoading = false;
+		try {
+			quizzes = await quizService.list();
+		} catch (e: any) {
+			loadError = e?.message || 'Failed to load quizzes';
+			toasts.show(loadError ?? 'Failed to load quizzes', 'error');
+		} finally {
+			isLoading = false;
+		}
 	});
 
 	async function handleCreate(data: CreateQuizRequest) {
 		isCreating = true;
 		try {
-			// Реальный флоу (когда main-service готов):
-			//   const quiz = await quizService.create(data);
-			//   goto(`/quizzes/${quiz.id}/edit`);
-			// Намеренно НЕ добавляем квиз в список вручную — список перечитывается с бэкенда.
-			await new Promise((r) => setTimeout(r, 400));
+			const quiz = await quizService.create(data);
 			toasts.show('Quiz created', 'success');
 			showCreateModal = false;
+			// Сразу открываем редактор нового черновика
+			goto(`/quizzes/${quiz.id}/edit`);
 		} catch (e: any) {
-			toasts.show(e.message || 'Failed to create quiz', 'error');
+			toasts.show(e?.message || 'Failed to create quiz', 'error');
 		} finally {
 			isCreating = false;
 		}
 	}
 </script>
 
+<svelte:head><title>My Quizzes · Quingo</title></svelte:head>
+
 <div class="mx-auto max-w-7xl">
 	<!-- Шапка раздела -->
 	<div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-		<div>
-			<h1 class="text-3xl font-bold italic text-white">My Quizzes</h1>
-			<p class="mt-1 text-sm text-slate-500">Create, edit and publish your quizzes.</p>
-		</div>
+		<h1 class="text-3xl font-bold italic text-white">My Quizzes</h1>
 		<Button onclick={() => (showCreateModal = true)} class="shrink-0">
 			<Plus size={18} /> Create Quiz
 		</Button>
@@ -130,8 +172,8 @@
 	{:else}
 		<!-- Сетка карточек -->
 		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-			{#each visibleQuizzes as quiz (quiz.id)}
-				<QuizCard {quiz} onSelect={openQuiz} />
+			{#each visibleQuizzes as quiz (quiz.id + '-' + quiz.status)}
+				<QuizCard {quiz} onSelect={openQuiz} onEdit={handleEdit} onDelete={handleDelete} onStart={handleStart} />
 			{/each}
 		</div>
 	{/if}
@@ -150,4 +192,17 @@
 	onClose={() => (previewQuiz = null)}
 	onStart={() => toasts.show('Live game is coming soon', 'info')}
 	onEdit={(q) => goto(`/quizzes/${q.id}/edit`)}
+/>
+
+<ConfirmDialog
+	isOpen={!!deleteTarget}
+	title={deleteMode === 'draft' ? 'Delete draft' : 'Delete quiz'}
+	message={deleteMode === 'draft'
+		? 'Your draft edits will be removed. The published version will stay.'
+		: 'This will permanently delete the quiz. This action cannot be undone.'}
+	confirmLabel={deleteMode === 'draft' ? 'Delete draft' : 'Delete'}
+	destructive={true}
+	isLoading={isDeleting}
+	onConfirm={confirmDelete}
+	onClose={() => (deleteTarget = null)}
 />

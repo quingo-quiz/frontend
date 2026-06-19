@@ -54,12 +54,21 @@
 	let confirmPassword = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
 
+	// Уже авторизован — на /auth делать нечего, уводим на главную
+	$effect(() => {
+		if (!userContext.isLoading && userContext.isAuthenticated) {
+			goto('/');
+		}
+	});
+
 	// --- Persistence (Sticky Forms) ---
 	onMount(() => {
 		const savedTab = localStorage.getItem('auth_active_tab');
 		if (savedTab === 'signin' || savedTab === 'create') activeTab = savedTab;
 		email = localStorage.getItem('auth_email') || '';
 		username = localStorage.getItem('auth_username') || '';
+		// Автофокус на первое осмысленное поле (email) — без autofocus-атрибута, чтобы не ловить a11y-warning
+		queueMicrotask(() => document.getElementById('auth-email')?.focus());
 	});
 
 	$effect(() => {
@@ -130,6 +139,8 @@
 	}
 </script>
 
+<svelte:head><title>Sign In · Quingo</title></svelte:head>
+
 <div class="flex min-h-dvh w-full flex-col items-center pt-[10dvh] sm:pt-[15dvh] p-4 bg-background transition-all"> <!-- min-h-dvh -->
 	
 	<div class="flex flex-col items-center mb-10">
@@ -153,7 +164,7 @@
 				<Input bind:value={username} label="Username" placeholder="username" icon={User} error={fieldErrors.username} disabled={activeTab !== 'create'} />
 			</div>
 
-			<Input bind:value={email} label="Email Address" placeholder="you@example.com" icon={Mail} error={fieldErrors.email} />
+			<Input id="auth-email" bind:value={email} label="Email Address" placeholder="you@example.com" icon={Mail} error={fieldErrors.email} />
 			
 			<div class="space-y-2">
 				<Input bind:value={password} type="password" label="Password" placeholder="Enter password" icon={Lock} error={fieldErrors.password} />

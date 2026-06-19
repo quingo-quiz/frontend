@@ -2,10 +2,9 @@
 import type { Card, CardType, QuizStatus } from '$lib/types/quiz';
 
 // Для фронта различаем только два состояния: «черновик» и «опубликован».
-// Черновик — всё, где есть незакоммиченные правки (UNPUBLISHED и PUBLISHED_WITH_DRAFT).
-// Чисто опубликованным считается только PUBLISHED.
+// UNPUBLISHED — это сводка/версия черновика, PUBLISHED — опубликованной версии.
 export function isDraft(status: QuizStatus): boolean {
-	return status !== 'PUBLISHED';
+	return status === 'UNPUBLISHED';
 }
 
 // Лимиты из доменной модели
@@ -16,8 +15,16 @@ export const MIN_OPTIONS = 2;
 export const MAX_OPTIONS = 8;
 export const DEFAULT_TIMER = 20;
 
+// id карточки — uuid (как на сервере). Локально временный, сервер переназначит при сохранении.
 export function newId(): string {
 	return globalThis.crypto?.randomUUID?.() ?? `tmp-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+// Временный id варианта ответа: на сервере это int, локально берём убывающие
+// отрицательные значения — гарантированно уникальные и не пересекаются с серверными.
+let _optSeq = -1;
+export function newOptionId(): number {
+	return _optSeq--;
 }
 
 // Фабрика новой карточки выбранного типа
@@ -29,8 +36,8 @@ export function createCard(type: CardType, position: number): Card {
 	return {
 		...base,
 		options: [
-			{ id: newId(), text: '', isCorrect: false },
-			{ id: newId(), text: '', isCorrect: false }
+			{ id: newOptionId(), text: '', isCorrect: false },
+			{ id: newOptionId(), text: '', isCorrect: false }
 		]
 	};
 }
@@ -44,8 +51,8 @@ export function changeCardType(card: Card, type: CardType): Card {
 	return {
 		...base,
 		options: [
-			{ id: newId(), text: '', isCorrect: false },
-			{ id: newId(), text: '', isCorrect: false }
+			{ id: newOptionId(), text: '', isCorrect: false },
+			{ id: newOptionId(), text: '', isCorrect: false }
 		]
 	};
 }
