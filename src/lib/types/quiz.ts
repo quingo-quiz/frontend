@@ -67,6 +67,26 @@ export interface QuizSummary {
 	createdAt: string;
 }
 
+// Элемент публичного каталога (GET /catalog)
+export interface CatalogItem {
+	id: UUID;
+	title: string;
+	description?: string;
+	cardCount: number;
+	modifiedAt: string;
+	createdAt: string;
+	ownerId: UUID;
+}
+
+// Постраничный ответ каталога
+export interface CatalogPage {
+	items: CatalogItem[];
+	page: number;
+	size: number;
+	total: number;
+	totalPages: number;
+}
+
 // --- Запросы ---
 
 export interface CreateQuizRequest {
