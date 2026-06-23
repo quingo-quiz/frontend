@@ -6,6 +6,7 @@ tags:
   - name: Auth
   - name: OAuth2
   - name: User
+  - name: Profile
   - name: Admin
   - name: MFA
 paths:
@@ -724,6 +725,93 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
       tags:
         - OAuth2
+  /profile/batch:
+    post:
+      operationId: ProfileRoutes_getProfiles
+      summary: Профили нескольких пользователей по списку ID
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserProfile'
+                  timestamp:
+                    type: string
+                    format: date-time
+      tags:
+        - Profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/uuid'
+  /profile/{id}:
+    get:
+      operationId: ProfileRoutes_getProfile
+      summary: Публичный профиль пользователя по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/uuid'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - statusMessage
+                  - message
+                  - data
+                  - timestamp
+                properties:
+                  status:
+                    type: integer
+                    format: int32
+                  statusMessage:
+                    type: string
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/UserProfile'
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      tags:
+        - Profile
   /refresh:
     post:
       operationId: AuthRoutes_refresh
@@ -1584,6 +1672,7 @@ components:
         - sessionId
         - issuedAt
         - expiresAt
+        - current
       properties:
         tokenId:
           allOf:
@@ -1601,6 +1690,9 @@ components:
           type: string
           format: date-time
           description: Время истечения срока действия
+        current:
+          type: boolean
+          description: Является ли сессия текущей
         browser:
           type: string
           description: Браузер
@@ -1665,6 +1757,19 @@ components:
         accountStatus:
           $ref: '#/components/schemas/AccountStatus'
       description: Пользователь
+    UserProfile:
+      type: object
+      required:
+        - id
+        - username
+      properties:
+        id:
+          $ref: '#/components/schemas/uuid'
+        username:
+          type: string
+        bio:
+          type: string
+      description: Публичный профиль пользователя (без приватных данных)
     VerifyEmailRequest:
       type: object
       required:

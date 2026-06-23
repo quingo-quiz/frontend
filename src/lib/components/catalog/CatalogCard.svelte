@@ -1,14 +1,16 @@
 <script lang="ts">
 	import { Play } from 'lucide-svelte';
 	import type { CatalogItem } from '$lib/types/quiz';
+	import type { UserProfile } from '$lib/api/profile';
 
 	interface Props {
 		item: CatalogItem;
+		profile?: UserProfile;
 		onSelect: (item: CatalogItem) => void;
 		onPlay: (item: CatalogItem) => void;
 	}
 
-	let { item, onSelect, onPlay }: Props = $props();
+	let { item, profile, onSelect, onPlay }: Props = $props();
 
 	const PALETTES = [
 		['from-indigo-900', 'to-violet-950'],
@@ -40,6 +42,8 @@
 
 	let [from, to] = $derived(PALETTES[hash(item.id) % PALETTES.length]);
 	let avatarColor = $derived(AVATAR_COLORS[hash(item.ownerId) % AVATAR_COLORS.length]);
+	let displayName = $derived(profile?.username ?? 'Quingo User');
+	let avatarLetter = $derived(displayName.charAt(0).toUpperCase());
 
 	function formatDate(d: string): string {
 		return new Date(d).toLocaleDateString('en', {
@@ -99,18 +103,22 @@
 
 		<!-- Футер: автор + дата + кнопка Play -->
 		<div class="mt-auto flex items-center justify-between pt-3">
-			<!-- Автор (заглушка) -->
-			<div class="flex min-w-0 items-center gap-2">
+			<!-- Автор -->
+			<a
+				href="/profile/{item.ownerId}"
+				onclick={(e) => e.stopPropagation()}
+				class="flex min-w-0 items-center gap-2 rounded-lg py-0.5 pl-0.5 pr-2.5 transition-colors hover:bg-white/5"
+			>
 				<div
 					class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white {avatarColor}"
 				>
-					Q
+					{avatarLetter}
 				</div>
 				<div class="min-w-0">
-					<p class="truncate text-xs font-medium text-slate-300">Quingo User</p>
+					<p class="truncate text-xs font-medium text-slate-300">{displayName}</p>
 					<p class="text-[10px] text-slate-600">{formatDate(item.createdAt)}</p>
 				</div>
-			</div>
+			</a>
 
 			<!-- Play -->
 			<button

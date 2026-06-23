@@ -2,26 +2,41 @@
 	import { onMount } from 'svelte';
 	import { Search, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import { catalogService } from '$lib/api/catalog';
+	import { profileService, type UserProfile } from '$lib/api/profile';
 	import CatalogCard from '$lib/components/catalog/CatalogCard.svelte';
 	import CatalogDetailModal from '$lib/components/catalog/CatalogDetailModal.svelte';
 	import { toasts } from '$lib/runes/toast.svelte';
 	import type { CatalogItem, CatalogPage } from '$lib/types/quiz';
 
-	const PAGE_SIZE = 12;
+	const PAGE_SIZE_OPTIONS = [6, 12, 24];
 
 	let searchInput = $state('');
 	let query = $state('');
 	let page = $state(0);
+	let pageSize = $state(12);
 	let result = $state<CatalogPage | null>(null);
 	let isLoading = $state(true);
 	let selectedItem = $state<CatalogItem | null>(null);
+	let profiles = $state<Map<string, UserProfile>>(new Map());
 
 	let debounceTimer: ReturnType<typeof setTimeout>;
 
 	async function load() {
 		isLoading = true;
 		try {
-			result = await catalogService.list({ q: query || undefined, page, size: PAGE_SIZE });
+			result = await catalogService.list({ q: query || undefined, page, size: pageSize });
+
+			if (result && result.items.length > 0) {
+				const uniqueIds = [...new Set(result.items.map((i) => i.ownerId))];
+				try {
+					const fetched = await profileService.batch(uniqueIds);
+					const map = new Map<string, UserProfile>();
+					for (const p of fetched) map.set(p.id, p);
+					profiles = map;
+				} catch {
+					// Профили не удалось загрузить — показываем заглушку
+				}
+			}
 		} catch (e: any) {
 			toasts.show(e?.message || 'Failed to load catalog', 'error');
 			result = null;
@@ -38,6 +53,12 @@
 			page = 0;
 			load();
 		}, 320);
+	}
+
+	function handlePageSize(size: number) {
+		pageSize = size;
+		page = 0;
+		load();
 	}
 
 	function goToPage(p: number) {
@@ -67,6 +88,7 @@
 	}
 
 	let pages = $derived(paginationPages(page, result?.totalPages ?? 0));
+	let selectedProfile = $derived(selectedItem ? profiles.get(selectedItem.ownerId) : undefined);
 </script>
 
 <svelte:head><title>Catalog · Quingo</title></svelte:head>
@@ -95,22 +117,42 @@
 		</div>
 	</div>
 
-	<!-- Счётчик результатов -->
+	<!-- Счётчик + селектор размера страницы -->
 	{#if !isLoading && result}
-		<p class="mb-5 text-xs text-slate-600">
-			{#if query}
-				{result.total} result{result.total !== 1 ? 's' : ''} for
-				<span class="font-semibold text-slate-400">"{query}"</span>
-			{:else}
-				{result.total} public quiz{result.total !== 1 ? 'zes' : ''} available
-			{/if}
-		</p>
+		<div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+			<p class="text-xs text-slate-600">
+				{#if query}
+					<span class="font-semibold text-slate-400">{result.total}</span> result{result.total !== 1 ? 's' : ''} for
+					<span class="font-semibold text-slate-400">"{query}"</span>
+				{:else}
+					<span class="font-semibold text-slate-400">{result.total}</span> public quiz{result.total !== 1 ? 'zes' : ''} available
+				{/if}
+				{#if (result.totalPages ?? 0) > 1}
+					&nbsp;· page <span class="font-semibold text-slate-400">{page + 1}</span> of <span class="font-semibold text-slate-400">{result.totalPages}</span>
+				{/if}
+			</p>
+
+			<div class="flex items-center gap-2 text-xs text-slate-500">
+				<span>Per page:</span>
+				<div class="inline-flex rounded-lg border border-white/5 bg-slate-950/60 p-0.5">
+					{#each PAGE_SIZE_OPTIONS as size}
+						<button
+							onclick={() => handlePageSize(size)}
+							class="rounded-md px-2.5 py-1 text-xs font-bold transition-all
+								{pageSize === size ? 'bg-white/10 text-white' : 'text-slate-500 hover:text-slate-300'}"
+						>
+							{size}
+						</button>
+					{/each}
+				</div>
+			</div>
+		</div>
 	{/if}
 
 	{#if isLoading}
 		<!-- Скелетоны -->
 		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-			{#each Array(PAGE_SIZE) as _}
+			{#each Array(pageSize) as _}
 				<div class="overflow-hidden rounded-3xl border border-white/5 bg-surface">
 					<div class="aspect-video animate-pulse bg-white/5"></div>
 					<div class="space-y-3 p-4">
@@ -155,7 +197,12 @@
 		<!-- Сетка карточек -->
 		<div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
 			{#each result.items as item (item.id)}
-				<CatalogCard {item} onSelect={(i) => (selectedItem = i)} onPlay={handlePlay} />
+				<CatalogCard
+					{item}
+					profile={profiles.get(item.ownerId)}
+					onSelect={(i) => (selectedItem = i)}
+					onPlay={handlePlay}
+				/>
 			{/each}
 		</div>
 
@@ -203,4 +250,9 @@
 </div>
 
 <!-- Детальный просмотр квиза -->
-<CatalogDetailModal item={selectedItem} onClose={() => (selectedItem = null)} onPlay={handlePlay} />
+<CatalogDetailModal
+	item={selectedItem}
+	profile={selectedProfile}
+	onClose={() => (selectedItem = null)}
+	onPlay={handlePlay}
+/>

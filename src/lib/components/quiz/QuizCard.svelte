@@ -162,7 +162,7 @@
 	<!-- Тело -->
 	<div class="flex flex-1 flex-col gap-2 p-5">
 		<h3 class="truncate text-lg font-bold text-white" title={quiz.title}>{quiz.title}</h3>
-		<p class="line-clamp-2 min-h-10 text-sm leading-relaxed text-slate-400">
+		<p class="line-clamp-2 min-h-10 break-words text-sm leading-relaxed text-slate-400">
 			{quiz.description || 'No description yet.'}
 		</p>
 

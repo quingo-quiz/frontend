@@ -68,7 +68,7 @@
 			<div class="flex flex-col gap-4 p-6 sm:p-8">
 				<div>
 					<h2 class="text-2xl font-bold text-white">{quiz.title}</h2>
-					<p class="mt-2 text-sm leading-relaxed text-slate-400">
+					<p class="mt-2 break-words text-sm leading-relaxed text-slate-400">
 						{quiz.description || 'No description.'}
 					</p>
 				</div>

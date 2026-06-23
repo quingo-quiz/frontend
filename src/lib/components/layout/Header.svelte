@@ -2,13 +2,13 @@
 	import { userContext } from '$lib/runes/user.svelte';
 	import UserWidget from './UserWidget.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { Bell } from 'lucide-svelte';
+	import { Bell, Library, BookOpen } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import icon from '$lib/assets/favicon.svg';
 
 	const navLinks = [
-		{ href: '/catalog', label: 'Catalog' },
-		{ href: '/quizzes', label: 'My Quizzes' }
+		{ href: '/catalog', label: 'Catalog', icon: Library },
+		{ href: '/quizzes', label: 'My Quizzes', icon: BookOpen }
 	];
 </script>
 
@@ -22,15 +22,17 @@
 			<span class="hidden text-xl font-bold tracking-tight italic sm:block">Quingo</span>
 		</a>
 
-		<!-- Nav -->
-		<nav class="hidden items-center gap-0.5 sm:flex">
+		<!-- Nav: иконка + подпись, видна на всех размерах экрана -->
+		<nav class="flex items-center gap-0.5">
 			{#each navLinks as link}
+				{@const active = $page.url.pathname.startsWith(link.href)}
 				<a
 					href={link.href}
-					class="rounded-lg px-3 py-2 text-sm font-medium transition-colors
-						{$page.url.pathname.startsWith(link.href) ? 'text-white' : 'text-slate-500 hover:text-slate-200'}"
+					class="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 transition-colors
+						{active ? 'text-white' : 'text-slate-500 hover:text-slate-200'}"
 				>
-					{link.label}
+					<link.icon size={18} />
+					<span class="text-[10px] font-medium leading-none">{link.label}</span>
 				</a>
 			{/each}
 		</nav>

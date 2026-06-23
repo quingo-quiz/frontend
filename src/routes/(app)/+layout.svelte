@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte';
 	import { authService } from '$lib/api/auth';
 	import { userContext } from '$lib/runes/user.svelte';
-	import { securityContext } from '$lib/runes/security.svelte'; // <-- Новый импорт
+	import { securityContext } from '$lib/runes/security.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
@@ -22,7 +22,7 @@
 			if (user) {
 				await securityContext.refreshStatus();
 			} else {
-				securityContext.set(null); // Сбрасываем статус, если пользователь не авторизован
+				securityContext.set(null);
 			}
 		} catch (e) {
 			userContext.set(null);

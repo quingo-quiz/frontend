@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { Plus, LayoutGrid } from 'lucide-svelte';
+	import { Plus, LayoutGrid, ChevronLeft, ChevronRight } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import QuizCard from '$lib/components/quiz/QuizCard.svelte';
 	import NewQuizModal from '$lib/components/quiz/NewQuizModal.svelte';
@@ -20,12 +20,15 @@
 	let isCreating = $state(false);
 	let previewQuiz = $state<QuizSummary | null>(null);
 
-	// Удаление: 'draft' = выбросить черновик (у опубликованного), 'quiz' = удалить весь квиз
 	let deleteTarget = $state<QuizSummary | null>(null);
 	let deleteMode = $state<'draft' | 'quiz'>('quiz');
 	let isDeleting = $state(false);
 
-	// Черновик открываем сразу в редакторе, опубликованный — через окно предпросмотра
+	// Пагинация
+	let currentPage = $state(0);
+	let pageSize = $state(12);
+	const pageSizeOptions = [6, 12, 24];
+
 	function openQuiz(quiz: QuizSummary) {
 		if (isDraft(quiz.status)) {
 			goto(`/quizzes/${quiz.id}/edit`);
@@ -42,7 +45,6 @@
 		toasts.show('Live game is coming soon', 'info');
 	}
 
-	// Видимость — свойство всего квиза; для опубликованных меняем прямо из каталога
 	async function handleToggleVisibility(quiz: QuizSummary) {
 		const next = quiz.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC';
 		try {
@@ -54,10 +56,6 @@
 		}
 	}
 
-	// Решаем, что именно удаляем:
-	// - опубликованная карточка → весь квиз;
-	// - карточка-черновик, у которого есть опубликованная версия → только черновик;
-	// - черновик без опубликованной версии → весь квиз.
 	function handleDelete(quiz: QuizSummary) {
 		const hasPublishedTwin = quizzes.some((q) => q.id === quiz.id && q.status === 'PUBLISHED');
 		deleteMode = isDraft(quiz.status) && hasPublishedTwin ? 'draft' : 'quiz';
@@ -96,7 +94,35 @@
 		return !isDraft(status);
 	}
 
-	let visibleQuizzes = $derived(quizzes.filter((q) => matchesFilter(q.status, filter)));
+	let filteredQuizzes = $derived(quizzes.filter((q) => matchesFilter(q.status, filter)));
+	let totalPages = $derived(Math.max(1, Math.ceil(filteredQuizzes.length / pageSize)));
+	let visibleQuizzes = $derived(
+		filteredQuizzes.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
+	);
+	let fromItem = $derived(filteredQuizzes.length === 0 ? 0 : currentPage * pageSize + 1);
+	let toItem = $derived(Math.min((currentPage + 1) * pageSize, filteredQuizzes.length));
+
+	// При смене фильтра или размера страницы — сбрасываем на первую страницу
+	$effect(() => {
+		filter;
+		pageSize;
+		currentPage = 0;
+	});
+
+	function paginationPages(current: number, total: number): (number | '…')[] {
+		if (total <= 1) return [];
+		if (total <= 7) return Array.from({ length: total }, (_, i) => i);
+		const pages: (number | '…')[] = [0];
+		const lo = Math.max(1, current - 1);
+		const hi = Math.min(total - 2, current + 1);
+		if (lo > 1) pages.push('…');
+		for (let i = lo; i <= hi; i++) pages.push(i);
+		if (hi < total - 2) pages.push('…');
+		pages.push(total - 1);
+		return pages;
+	}
+
+	let pages = $derived(paginationPages(currentPage, totalPages));
 
 	onMount(async () => {
 		try {
@@ -115,7 +141,6 @@
 			const quiz = await quizService.create(data);
 			toasts.show('Quiz created', 'success');
 			showCreateModal = false;
-			// Сразу открываем редактор нового черновика
 			goto(`/quizzes/${quiz.id}/edit`);
 		} catch (e: any) {
 			toasts.show(e?.message || 'Failed to create quiz', 'error');
@@ -136,21 +161,45 @@
 		</Button>
 	</div>
 
-	<!-- Фильтр по статусу -->
-	<div class="mb-6 inline-flex rounded-xl border border-white/5 bg-slate-950/60 p-1">
-		{#each filters as f}
-			<button
-				onclick={() => (filter = f.id)}
-				class={cn(
-					'rounded-lg px-4 py-2 text-xs font-bold transition-all',
-					filter === f.id
-						? 'bg-primary text-white shadow-md shadow-primary/20'
-						: 'text-slate-500 hover:text-slate-300'
-				)}
-			>
-				{f.label}
-			</button>
-		{/each}
+	<!-- Фильтр + настройки отображения -->
+	<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+		<div class="inline-flex rounded-xl border border-white/5 bg-slate-950/60 p-1">
+			{#each filters as f}
+				<button
+					onclick={() => (filter = f.id)}
+					class={cn(
+						'rounded-lg px-4 py-2 text-xs font-bold transition-all',
+						filter === f.id
+							? 'bg-primary text-white shadow-md shadow-primary/20'
+							: 'text-slate-500 hover:text-slate-300'
+					)}
+				>
+					{f.label}
+				</button>
+			{/each}
+		</div>
+
+		<!-- Выбор количества на странице -->
+		{#if !isLoading && filteredQuizzes.length > 0}
+			<div class="flex items-center gap-2 text-xs text-slate-500">
+				<span>Per page:</span>
+				<div class="inline-flex rounded-lg border border-white/5 bg-slate-950/60 p-0.5">
+					{#each pageSizeOptions as size}
+						<button
+							onclick={() => (pageSize = size)}
+							class={cn(
+								'rounded-md px-2.5 py-1 text-xs font-bold transition-all',
+								pageSize === size
+									? 'bg-white/10 text-white'
+									: 'text-slate-500 hover:text-slate-300'
+							)}
+						>
+							{size}
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	{#if isLoading}
@@ -167,7 +216,7 @@
 				</div>
 			{/each}
 		</div>
-	{:else if visibleQuizzes.length === 0}
+	{:else if filteredQuizzes.length === 0}
 		<!-- Пустое состояние -->
 		<div
 			class="flex flex-col items-center justify-center rounded-4xl border border-dashed border-white/10 bg-surface/50 py-20 text-center"
@@ -190,7 +239,14 @@
 			</Button>
 		</div>
 	{:else}
-		<!-- Сетка карточек -->
+		<!-- Счётчик и сетка -->
+		<p class="mb-5 text-xs text-slate-600">
+			Showing <span class="font-semibold text-slate-400">{fromItem}–{toItem}</span> of
+			<span class="font-semibold text-slate-400">{filteredQuizzes.length}</span>
+			{filteredQuizzes.length === 1 ? 'quiz' : 'quizzes'}
+			{#if totalPages > 1}&nbsp;· page <span class="font-semibold text-slate-400">{currentPage + 1}</span> of <span class="font-semibold text-slate-400">{totalPages}</span>{/if}
+		</p>
+
 		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
 			{#each visibleQuizzes as quiz (quiz.id + '-' + quiz.status)}
 				<QuizCard
@@ -203,6 +259,47 @@
 				/>
 			{/each}
 		</div>
+
+		<!-- Пагинация -->
+		{#if totalPages > 1}
+			<div class="mt-10 flex items-center justify-center gap-1.5">
+				<button
+					onclick={() => (currentPage -= 1)}
+					disabled={currentPage === 0}
+					aria-label="Previous page"
+					class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-surface text-slate-400 transition-colors hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+				>
+					<ChevronLeft size={16} />
+				</button>
+
+				{#each pages as p}
+					{#if p === '…'}
+						<span class="flex h-9 w-9 items-center justify-center text-sm text-slate-600">…</span>
+					{:else}
+						<button
+							onclick={() => (currentPage = p)}
+							aria-label="Page {p + 1}"
+							aria-current={p === currentPage ? 'page' : undefined}
+							class="flex h-9 w-9 items-center justify-center rounded-xl border text-sm font-semibold transition-colors
+								{p === currentPage
+								? 'border-primary/30 bg-primary/15 text-primary'
+								: 'border-white/10 bg-surface text-slate-400 hover:border-white/20 hover:text-white'}"
+						>
+							{p + 1}
+						</button>
+					{/if}
+				{/each}
+
+				<button
+					onclick={() => (currentPage += 1)}
+					disabled={currentPage >= totalPages - 1}
+					aria-label="Next page"
+					class="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-surface text-slate-400 transition-colors hover:border-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-30"
+				>
+					<ChevronRight size={16} />
+				</button>
+			</div>
+		{/if}
 	{/if}
 </div>
 

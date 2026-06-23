@@ -668,17 +668,43 @@
 					>
 				{/if}
 			</div>
-			<input
-				bind:value={title}
-				placeholder="Untitled quiz"
-				class="block w-full bg-transparent text-4xl font-bold tracking-tight text-white placeholder:text-slate-700 focus:outline-none"
-			/>
-			<textarea
-				bind:value={description}
-				rows="2"
-				placeholder="Add a description…"
-				class="mt-3 block w-full resize-none bg-transparent text-base leading-relaxed text-slate-400 placeholder:text-slate-600 focus:outline-none"
-			></textarea>
+			<div class="group relative">
+				<input
+					bind:value={title}
+					maxlength={50}
+					placeholder="Untitled quiz"
+					class="block w-full bg-transparent text-4xl font-bold tracking-tight text-white placeholder:text-slate-700 focus:outline-none"
+				/>
+				<span
+					class="pointer-events-none absolute right-0 bottom-0.5 text-[10px] tabular-nums transition-colors
+						{title.length >= 50
+						? 'text-red-400'
+						: title.length >= 45
+							? 'text-amber-500'
+							: 'text-slate-700 opacity-0 group-focus-within:opacity-100'}"
+				>
+					{title.length}/50
+				</span>
+			</div>
+			<div class="group relative mt-3">
+				<textarea
+					bind:value={description}
+					maxlength={500}
+					rows="2"
+					placeholder="Add a description…"
+					class="block w-full resize-none bg-transparent text-base leading-relaxed text-slate-400 placeholder:text-slate-600 focus:outline-none"
+				></textarea>
+				<span
+					class="pointer-events-none absolute right-0 bottom-0.5 text-[10px] tabular-nums transition-colors
+						{description.length >= 500
+						? 'text-red-400'
+						: description.length >= 450
+							? 'text-amber-500'
+							: 'text-slate-700 opacity-0 group-focus-within:opacity-100'}"
+				>
+					{description.length}/500
+				</span>
+			</div>
 		</div>
 
 		<div class="flex flex-col gap-6 lg:flex-row">

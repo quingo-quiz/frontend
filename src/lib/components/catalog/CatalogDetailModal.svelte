@@ -3,14 +3,16 @@
 	import { fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 	import type { CatalogItem } from '$lib/types/quiz';
+	import type { UserProfile } from '$lib/api/profile';
 
 	interface Props {
 		item: CatalogItem | null;
+		profile?: UserProfile;
 		onClose: () => void;
 		onPlay: (item: CatalogItem) => void;
 	}
 
-	let { item, onClose, onPlay }: Props = $props();
+	let { item, profile, onClose, onPlay }: Props = $props();
 
 	const PALETTES = [
 		['from-indigo-900', 'to-violet-950'],
@@ -44,6 +46,8 @@
 	let avatarColor = $derived(
 		item ? AVATAR_COLORS[hash(item.ownerId) % AVATAR_COLORS.length] : AVATAR_COLORS[0]
 	);
+	let displayName = $derived(profile?.username ?? 'Quingo User');
+	let avatarLetter = $derived(displayName.charAt(0).toUpperCase());
 
 	function fmt(d: string): string {
 		return new Date(d).toLocaleDateString('en', {
@@ -112,11 +116,11 @@
 			<!-- Контент -->
 			<div class="px-5 pt-5 pb-6">
 				<!-- Заголовок -->
-				<h2 class="text-xl leading-snug font-bold text-white">{item.title}</h2>
+				<h2 class="break-words text-xl leading-snug font-bold text-white">{item.title}</h2>
 
-				<!-- Описание -->
+				<!-- Описание — break-words чтобы длинные слова переносились -->
 				{#if item.description}
-					<p class="mt-1.5 text-sm leading-relaxed text-slate-400">{item.description}</p>
+					<p class="mt-1.5 break-words text-sm leading-relaxed text-slate-400">{item.description}</p>
 				{:else}
 					<p class="mt-1.5 text-sm text-slate-600 italic">No description provided.</p>
 				{/if}
@@ -126,18 +130,22 @@
 
 				<!-- Автор + мета в одной строке -->
 				<div class="flex items-center justify-between gap-3">
-					<!-- Автор -->
-					<div class="flex min-w-0 items-center gap-2.5">
+					<!-- Автор (ссылка на профиль) -->
+					<a
+						href="/profile/{item.ownerId}"
+						onclick={onClose}
+						class="-ml-1 flex min-w-0 items-center gap-2.5 rounded-xl p-1 transition-colors hover:bg-white/5"
+					>
 						<div
 							class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white {avatarColor}"
 						>
-							Q
+							{avatarLetter}
 						</div>
 						<div class="min-w-0">
-							<p class="truncate text-sm font-semibold text-white">Quingo User</p>
+							<p class="truncate text-sm font-semibold text-white">{displayName}</p>
 							<p class="text-[11px] text-slate-500">Author</p>
 						</div>
-					</div>
+					</a>
 
 					<!-- Мета: карточки + даты -->
 					<div class="shrink-0 space-y-0.5 text-right text-[11px] text-slate-500">
