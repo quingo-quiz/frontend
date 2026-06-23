@@ -22,7 +22,11 @@ function refreshSession(headers: Record<string, string>): Promise<boolean> {
 	return refreshPromise;
 }
 
-export async function authorizedFetch(url: string, options: RequestInit = {}): Promise<Response> {
+export async function authorizedFetch(
+	url: string,
+	options: RequestInit = {},
+	{ redirectOnAuthFailure = true }: { redirectOnAuthFailure?: boolean } = {}
+): Promise<Response> {
 	const defaultHeaders = {
 		'Content-Type': 'application/json',
 		'Auth-Strategy': 'cookie'
@@ -45,7 +49,14 @@ export async function authorizedFetch(url: string, options: RequestInit = {}): P
 			response = await doFetch();
 		} else {
 			userContext.logout();
-			if (typeof window !== 'undefined') goto('/auth');
+			// Мягкая проверка сессии (например, первичный fetchUserInfo на публичной
+			// странице) не должна никуда уводить — просто сообщаем, что сессии нет.
+			if (redirectOnAuthFailure && typeof window !== 'undefined') {
+				const target = window.location.pathname + window.location.search;
+				const suffix =
+					target && target !== '/' ? `?redirect=${encodeURIComponent(target)}` : '';
+				goto(`/auth${suffix}`);
+			}
 			throw new Error('Session expired. Please log in again.');
 		}
 	}

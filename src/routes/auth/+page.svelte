@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation'; // Только goto
+	import { page } from '$app/stores';
 	import { slide } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 
@@ -54,10 +55,18 @@
 	let confirmPassword = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
 
-	// Уже авторизован — на /auth делать нечего, уводим на главную
+	// Куда вести после успешного входа: на запомненный путь (?redirect=)
+	// либо на главную. Берём только локальные пути — защита от open-redirect.
+	function postAuthTarget(): string {
+		const raw = $page.url.searchParams.get('redirect');
+		if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+		return '/';
+	}
+
+	// Уже авторизован — на /auth делать нечего, уводим по назначению
 	$effect(() => {
 		if (!userContext.isLoading && userContext.isAuthenticated) {
-			goto('/');
+			goto(postAuthTarget());
 		}
 	});
 
@@ -114,7 +123,7 @@
 			localStorage.removeItem('auth_email');
 			localStorage.removeItem('auth_username');
 			toasts.show('Authentication successful!', 'success');
-			goto('/');
+			goto(postAuthTarget());
 		} else {
 			toasts.show('Failed to fetch user profile', 'error');
 		}

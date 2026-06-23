@@ -6,9 +6,12 @@
 	import { page } from '$app/stores';
 	import icon from '$lib/assets/favicon.svg';
 
+	// Константа (не реактивная): иконки — это объекты-компоненты, и попадание
+	// их в реактивный $derived ломает dev-сравнение Svelte. Фильтр по авторизации
+	// делаем в шаблоне. `protected: true` — пункт только для залогиненных.
 	const navLinks = [
-		{ href: '/catalog', label: 'Catalog', icon: Library },
-		{ href: '/quizzes', label: 'My Quizzes', icon: BookOpen }
+		{ href: '/catalog', label: 'Catalog', icon: Library, protected: false },
+		{ href: '/quizzes', label: 'My Quizzes', icon: BookOpen, protected: true }
 	];
 </script>
 
@@ -25,21 +28,26 @@
 		<!-- Nav: иконка + подпись, видна на всех размерах экрана -->
 		<nav class="flex items-center gap-0.5">
 			{#each navLinks as link}
-				{@const active = $page.url.pathname.startsWith(link.href)}
-				<a
-					href={link.href}
-					class="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 transition-colors
-						{active ? 'text-white' : 'text-slate-500 hover:text-slate-200'}"
-				>
-					<link.icon size={18} />
-					<span class="text-[10px] font-medium leading-none">{link.label}</span>
-				</a>
+				{#if !link.protected || userContext.isAuthenticated}
+					{@const active = $page.url.pathname.startsWith(link.href)}
+					<a
+						href={link.href}
+						class="flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 transition-colors
+							{active ? 'text-white' : 'text-slate-500 hover:text-slate-200'}"
+					>
+						<link.icon size={18} />
+						<span class="text-[10px] font-medium leading-none">{link.label}</span>
+					</a>
+				{/if}
 			{/each}
 		</nav>
 
 		<!-- Right -->
 		<div class="flex shrink-0 items-center gap-2">
-			{#if userContext.isAuthenticated}
+			{#if userContext.isLoading}
+				<!-- Нейтральная заглушка, чтобы не мигать Sign In → виджет юзера -->
+				<div class="h-9 w-9 animate-pulse rounded-full bg-white/5"></div>
+			{:else if userContext.isAuthenticated}
 				<button class="hidden p-2 text-slate-500 transition-colors hover:text-white sm:block">
 					<Bell size={20} />
 				</button>

@@ -10,3 +10,129 @@
   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.191:[1m5173[22m/[39m
   [32m➜[39m  [1mNetwork[22m: [36mhttp://172.28.128.1:[1m5173[22m/[39m
 [2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m02:49:04[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m02:49:39[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:48:38
+
+[2m02:53:12[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:48:38
+
+[2m02:53:16[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:48:38
+
+[2m02:53:36[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22m[svelte] ownership_invalid_mutation
+Mutating unbound props (`card`, at src/​lib/​components/​quiz/​editor/​CardEditor.svelte:77:14) is strongly discouraged. Consider using `bind:card={...}` in src/routes/(app)/quizzes/[id]/edit/+page.svelte (or using a callback) instead
+https://svelte.dev/e/ownership_invalid_mutation
+[2m02:53:36[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22m[svelte] ownership_invalid_mutation
+Mutating unbound props (`card`, at src/​lib/​components/​quiz/​editor/​CardEditor.svelte:77:14) is strongly discouraged. Consider using `bind:card={...}` in src/routes/(app)/quizzes/[id]/edit/+page.svelte (or using a callback) instead
+https://svelte.dev/e/ownership_invalid_mutation
+[2m02:53:37[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22m[svelte] ownership_invalid_mutation
+Mutating unbound props (`card`, at src/​lib/​components/​quiz/​editor/​CardEditor.svelte:77:14) is strongly discouraged. Consider using `bind:card={...}` in src/routes/(app)/quizzes/[id]/edit/+page.svelte (or using a callback) instead
+https://svelte.dev/e/ownership_invalid_mutation
+[2m02:53:39[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22m[svelte] ownership_invalid_mutation
+Mutating unbound props (`card`, at src/​lib/​components/​quiz/​editor/​CardEditor.svelte:165:18) is strongly discouraged. Consider using `bind:card={...}` in src/routes/(app)/quizzes/[id]/edit/+page.svelte (or using a callback) instead
+https://svelte.dev/e/ownership_invalid_mutation
+[2m02:53:39[22m [33m[1m[vite][22m[39m [33m[2m(client)[22m[39m [2m[console.warn] [22m[svelte] ownership_invalid_mutation
+Mutating unbound props (`card`, at src/​lib/​components/​quiz/​editor/​CardEditor.svelte:165:18) is strongly discouraged. Consider using `bind:card={...}` in src/routes/(app)/quizzes/[id]/edit/+page.svelte (or using a callback) instead
+https://svelte.dev/e/ownership_invalid_mutation
+[2m02:54:40[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:48:38
+
+[2m02:54:48[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m02:54:49[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m02:54:51[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m02:54:52[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m02:54:52[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m02:58:03[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/lib/components/catalog/CatalogDetailModal.svelte, /src/app.css[22m
+[2m02:58:03[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/lib/components/catalog/CatalogDetailModal.svelte[22m
+[2m02:58:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/lib/components/quiz/QuizCard.svelte, /src/app.css[22m
+[2m02:58:08[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/lib/components/quiz/QuizCard.svelte[22m
+[2m02:58:12[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/lib/components/quiz/QuizPreviewModal.svelte, /src/app.css[22m
+[2m02:58:12[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/lib/components/quiz/QuizPreviewModal.svelte[22m
+[2m02:58:35[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/lib/components/layout/Header.svelte, /src/app.css[22m
+[2m02:58:35[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/lib/components/layout/Header.svelte[22m
+[2m02:58:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/(app)/+layout.svelte, /src/app.css[22m
+[2m02:58:49[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/routes/(app)/+layout.svelte[22m
+[2m03:03:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/(app)/quizzes/[id]/edit/+page.svelte, /src/app.css[22m
+[2m03:03:43[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/routes/(app)/quizzes/[id]/edit/+page.svelte[22m
+[2m03:07:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/(app)/profile/[id]/+page.svelte, /src/app.css[22m
+[2m03:07:25[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/routes/(app)/profile/[id]/+page.svelte[22m
+[2m03:07:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/lib/components/catalog/CatalogCard.svelte, /src/app.css[22m
+[2m03:07:38[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/lib/components/catalog/CatalogCard.svelte[22m
+[2m03:08:28[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/(app)/quizzes/+page.svelte, /src/app.css[22m
+[2m03:08:28[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/routes/(app)/quizzes/+page.svelte[22m
+[2m03:10:31[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m03:10:37[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m03:10:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/(app)/catalog/+page.svelte, /src/app.css[22m
+[2m03:10:37[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/routes/(app)/catalog/+page.svelte[22m
+[2m03:10:41[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mReferenceError[22m: PAGE_SIZE is not defined
+
+	in <unknown>
+	in +page.svelte
+	in +layout.svelte
+	in +layout.svelte
+	in root.svelte
+	in undefined
+
+[39m > src/routes/(app)/catalog/+page.svelte:129:16
+    127 |  		<!-- Скелетоны -->
+    128 |  		<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+    129 |  			{#each Array(PAGE_SIZE) as _}
+        |                  ^
+    130 |  				<div class="overflow-hidden rounded-3xl border border-white/5 bg-surface">
+    131 |  					<div class="aspect-video animate-pulse bg-white/5"></div>
+ > node_modules/svelte/src/internal/client/dom/blocks/each.js:204:19
+ > update_reaction node_modules/svelte/src/internal/client/runtime.js:259:15
+ > execute_derived node_modules/svelte/src/internal/client/reactivity/deriveds.js:367:11
+ > update_derived node_modules/svelte/src/internal/client/reactivity/deriveds.js:391:13
+ > get node_modules/svelte/src/internal/client/runtime.js:671:3
+ > node_modules/svelte/src/internal/client/dom/blocks/each.js:261:30
+ > update_reaction node_modules/svelte/src/internal/client/runtime.js:259:15
+ > update_effect node_modules/svelte/src/internal/client/runtime.js:468:17
+ > create_effect node_modules/svelte/src/internal/client/reactivity/effects.js:138:3
+
+[2m03:10:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/(app)/catalog/+page.svelte, /src/app.css[22m
+[2m03:10:41[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/routes/(app)/catalog/+page.svelte[22m
+[2m03:10:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/(app)/catalog/+page.svelte, /src/app.css[22m
+[2m03:10:46[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/routes/(app)/catalog/+page.svelte[22m
+[2m03:11:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/(app)/catalog/+page.svelte, /src/app.css[22m
+[2m03:11:00[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/routes/(app)/catalog/+page.svelte[22m
+[2m03:11:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/routes/(app)/catalog/+page.svelte, /src/app.css[22m
+[2m03:11:19[22m [36m[1m[vite][22m[39m [34m[2m(ssr)[22m[39m [32mpage reload [39m[2msrc/routes/(app)/catalog/+page.svelte[22m
+[2m03:12:03[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:48:38
+
+[2m03:12:04[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:48:38
+
+[2m03:12:05[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:48:38
+
+[2m03:12:08[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:48:38
+
+[2m03:12:09[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m03:12:10[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+
+[2m03:12:10[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m [31m[Unhandled error] [1mRangeError[22m: Maximum call stack size exceeded
+[39m > array_prototype.includes node_modules/svelte/src/internal/client/dev/equality.js:49:23
+

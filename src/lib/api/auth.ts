@@ -60,7 +60,13 @@ export const authService = {
 
 	async fetchUserInfo(): Promise<User | null> {
 		try {
-			const res = await authorizedFetch(`${SERVICE_URL}/user/me`);
+			// Мягкая проверка сессии: без редиректа на /auth при отсутствии сессии,
+			// иначе аноним не сможет открыть публичные страницы.
+			const res = await authorizedFetch(
+				`${SERVICE_URL}/user/me`,
+				{},
+				{ redirectOnAuthFailure: false }
+			);
 			if (!res.ok) return null;
 			const result: ApiResponse<User> = await res.json();
 			return result.data;
