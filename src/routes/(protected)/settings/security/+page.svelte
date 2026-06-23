@@ -358,7 +358,7 @@
 									<!-- Metadata -->
 									<div class="space-y-0.5">
 										<p class="text-[10px] font-medium text-slate-400">
-											Signed in {formatSessionDate(session.issuedAt)}
+											Signed in {formatSessionDate(session.loggedInAt)}
 										</p>
 										<p class="font-mono text-[9px] tracking-tighter text-slate-500">
 											{session.ipAddress}

@@ -120,6 +120,7 @@ export interface SessionModel {
 	tokenId: UUID;
 	sessionId: UUID;
 	issuedAt: string; // ISO Date String
+	loggedInAt: string; // ISO Date String
 	expiresAt: string; // ISO Date String
 	browser?: string;
 	os?: string;

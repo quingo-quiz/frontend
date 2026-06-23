@@ -1671,6 +1671,7 @@ components:
         - tokenId
         - sessionId
         - issuedAt
+        - loggedInAt
         - expiresAt
         - current
       properties:
@@ -1685,7 +1686,11 @@ components:
         issuedAt:
           type: string
           format: date-time
-          description: Время выдачи
+          description: Время выдачи токена (обновляется при каждом рефреше)
+        loggedInAt:
+          type: string
+          format: date-time
+          description: Время первого входа сессии (не меняется при рефрешах) — использовать как «начало сессии»
         expiresAt:
           type: string
           format: date-time
